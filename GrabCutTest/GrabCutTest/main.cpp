@@ -47,31 +47,35 @@ int main()
 
 		if (userBoxCount > 0) break;
 	}
-	cv::Rect rectangle(rectangleBox.x, rectangleBox.y,rectangleBox.width, rectangleBox.height);
 	
+	cv::Rect rectangle(rectangleBox.x, rectangleBox.y,rectangleBox.width, rectangleBox.height);
+
 	//사각형 안그려진 이미지를 다시 로드
 	image = cv::imread("input.jpg");
-	cv::Mat result; // 분할 (4자기 가능한 값)
+	cv::Mat result, tempFG, tempPRFG; // 분할 (4자기 가능한 값)
 	cv::Mat bgModel, fgModel; // 모델 (초기 사용)
 	cv::grabCut(image,    // 입력 영상
 		result,    // 분할 결과
 		rectangle,   // 전경을 포함하는 직사각형
 		bgModel, fgModel, // 모델
-		15,     // 반복 횟수
+		40,     // 반복 횟수
 		cv::GC_INIT_WITH_RECT); 
 
-	cv::compare(result, cv::GC_PR_FGD, result, cv::CMP_EQ);
+	cv::compare(result, cv::GC_PR_FGD, tempPRFG, cv::CMP_EQ);
+	cv::compare(result, cv::GC_FGD, tempFG, cv::CMP_EQ);
 
 	// 전경일 가능성이 있는 화소를 마크한 것을 가져오기
 	cv::Mat foreground(image.size(), CV_8UC3, cv::Scalar(255, 255, 255));
 	// 결과 영상 생성
-	image.copyTo(foreground, result);
+	image.copyTo(foreground, tempPRFG);
+	image.copyTo(foreground, tempFG);
 	// 배경 화소는 복사되지 않음
 	cv::namedWindow("Result");
 	cv::imshow("Result", result);
 
 	cv::namedWindow("Foreground");
 	cv::imshow("Foreground", foreground);
+	cv::imwrite("output.jpg",foreground);
 
 	cv::waitKey(0);
 

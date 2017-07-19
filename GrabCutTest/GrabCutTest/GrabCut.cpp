@@ -41,6 +41,7 @@
 
 #include "precomp.hpp"
 #include "gcgraph.hpp"
+#include <opencv2/highgui/highgui.hpp>
 //#include <limits>
 
 using namespace cv;
@@ -339,14 +340,14 @@ Initialize mask using rectangular.
 static void initMaskWithRect(Mat& mask, Size imgSize, Rect rect)
 {
 	mask.create(imgSize, CV_8UC1);
-	mask.setTo(GC_BGD);
+	mask.setTo(GC_PR_BGD);
 
 	rect.x = std::max(0, rect.x);
 	rect.y = std::max(0, rect.y);
 	rect.width = std::min(rect.width, imgSize.width - rect.x);
 	rect.height = std::min(rect.height, imgSize.height - rect.y);
 
-	(mask(rect)).setTo(Scalar(GC_PR_FGD));
+	(mask(rect)).setTo(Scalar(GC_FGD));
 }
 
 /*
@@ -385,7 +386,7 @@ static void initGMMs(const Mat& img, const Mat& mask, GMM& bgdGMM, GMM& fgdGMM)
 
 	fgdGMM.initLearning();
 	for (int i = 0; i < (int)fgdSamples.size(); i++)
-		fgdGMM.addSample(fgdLabels.at<int>(i, 0), fgdSamples[i]);
+		fgdGMM.addSample(fgdLabels.at<int>(i, 0), fgdSamples[i]); 
 	fgdGMM.endLearning();
 }
 
@@ -532,6 +533,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		CV_Error(CV_StsBadArg, "image is empty");
 	if (img.type() != CV_8UC3)
 		CV_Error(CV_StsBadArg, "image must have CV_8UC3 type");
+	printf("Please Wait...\n");
 
 	GMM bgdGMM(bgdModel), fgdGMM(fgdModel);
 	Mat compIdxs(img.size(), CV_32SC1);
@@ -544,20 +546,20 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 			checkMask(img, mask);
 		initGMMs(img, mask, bgdGMM, fgdGMM);
 	}
-
+	
 	if (iterCount <= 0)
 		return;
 
 	if (mode == GC_EVAL)
 		checkMask(img, mask);
 
-	const double gamma = 50;
+	const double gamma = 20;
 	const double lambda = 9 * gamma;
 	const double beta = calcBeta(img);
 
 	Mat leftW, upleftW, upW, uprightW;
 	calcNWeights(img, leftW, upleftW, upW, uprightW, beta, gamma);
-
+	Mat tempFG, tempBG, tempPRFG;
 	for (int i = 0; i < iterCount; i++)
 	{
 		GCGraph<double> graph;
@@ -565,6 +567,19 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		learnGMMs(img, mask, compIdxs, bgdGMM, fgdGMM);
 		constructGCGraph(img, mask, bgdGMM, fgdGMM, lambda, leftW, upleftW, upW, uprightW, graph);
 		estimateSegmentation(graph, mask);
+		//////
+		printf("Count : %d\n", i + 1);
+		cv::compare(mask, cv::GC_PR_FGD, tempPRFG, cv::CMP_EQ);
+		cv::compare(mask, cv::GC_FGD, tempFG, cv::CMP_EQ);
+		cv::Mat foreground(img.size(), CV_8UC3, cv::Scalar(250, 250, 250));
+		cv::compare(mask, cv::GC_PR_BGD, tempBG, cv::CMP_EQ);
+		// 결과 영상 생성
+		img.copyTo(foreground, tempPRFG);
+		img.copyTo(foreground, tempFG);
+		cv::namedWindow("intermediate");
+		cv::imshow("intermediate", foreground);
+		cv::waitKey(100);
+		///////
 	}
 }
 //////////////////////////////////////////////////////////////////////////
