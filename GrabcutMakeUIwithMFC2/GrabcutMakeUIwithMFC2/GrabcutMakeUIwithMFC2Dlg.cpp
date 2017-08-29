@@ -241,6 +241,10 @@ void CGrabcutMakeUIwithMFC2Dlg::OnBnClickedImageopen()
 		//AfxMessageBox(cstrImgPath);
 		
 		inputImg = imread(string(cstrImgPath));
+
+		if (inputImg.cols % 8 != 0) {
+			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols%8, inputImg.rows), 0, 0, CV_INTER_NN);
+		}
 		DisplayImage(IDC_PIC, inputImg);
 		isReadyInput = true;
 	}
