@@ -9,8 +9,9 @@
 
 //전역변수들////////////////////
 Mat callBG;
-Mat GrabCutImg = imread("output.png");
+Mat GrabCutImg;
 CPoint mouseMovePoint;
+CPoint nowCutImgPoint=0;
 bool isLeftMouseDown = false; // True : 마우스 왼쪽 누르고 있는 상태 / false : 뗀 상태
 
 ///////////////////////////////
@@ -111,9 +112,23 @@ void GrabcutOutput::DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat)
 	}
 }
 
-//이미지 디스플레이를 위한 함수 : 붙여넣기
-void GrabcutOutput::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat)
+//이미지 디스플레이를 위한 함수 : (mode=0 : 붙여넣기, mode=1 : 이동)
+void GrabcutOutput::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mode)
 {
+	for (int i = 0;i < targetMat.cols;i++)
+	{
+		for (int j = 0;j < targetMat.rows;j++)
+		{
+			if (targetMat.at<Vec3b>(j, i)[0] == 255 && targetMat.at<Vec3b>(j, i)[1] == 255 && targetMat.at<Vec3b>(j, i)[2] == 255)
+			{
+				//targetMat.at<Vec3b>(j, i) = 255;
+
+			}
+				
+		}
+
+	}
+
 	IplImage* targetIplImage = new IplImage(targetMat);
 	if (targetIplImage != nullptr) {
 		CWnd* pWnd_ImageTraget = GetDlgItem(IDC_PICTURE_TARGET);
@@ -148,9 +163,23 @@ void GrabcutOutput::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat)
 		bitmapInfo.bmiHeader.biBitCount = tempImage->depth * tempImage->nChannels;
 
 		dcImageTraget.SetStretchBltMode(COLORONCOLOR);
-		::StretchDIBits(dcImageTraget.GetSafeHdc(), rcImageTraget.left, rcImageTraget.top, rcImageTraget.right, rcImageTraget.bottom,
-			0, 0, tempImage->width, tempImage->height, tempImage->imageData, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
-		cvReleaseImage(&tempImage);
+
+		if (mode == 0)
+		{
+			::StretchDIBits(dcImageTraget.GetSafeHdc(), rcImageTraget.left + callBG.cols, rcImageTraget.top, rcImageTraget.right, rcImageTraget.bottom,
+				0, 0, tempImage->width, tempImage->height, tempImage->imageData, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+			cvReleaseImage(&tempImage);
+		}
+
+		if (mode == 1)
+		{
+			DisplayOutput(IDC_OUTPUT, callBG);
+			::StretchDIBits(dcImageTraget.GetSafeHdc(), mouseMovePoint.x - GrabCutImg.cols / 2, mouseMovePoint.y - GrabCutImg.rows / 2,
+				rcImageTraget.right, rcImageTraget.bottom ,
+				0, 0, tempImage->width, tempImage->height, tempImage->imageData, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+			cvReleaseImage(&tempImage);
+		}
+		
 		//if (isLeftMouseDown)
 		//	dcImageTraget.StretchBlt(0, 0, GrabCutImg.cols-100, GrabCutImg.rows-100, &dcImageTraget, 0, 0, GrabCutImg.cols, GrabCutImg.rows,SRCCOPY);
 			
@@ -170,7 +199,8 @@ void GrabcutOutput::OnBnClickedCallbackground()
 
 		callBG = imread(string(cstrImgPath));
 		DisplayOutput(IDC_OUTPUT, callBG);
-
+		nowCutImgPoint.x = callBG.cols + GrabCutImg.cols / 2;
+		nowCutImgPoint.y = GrabCutImg.rows / 2;
 	}
 }
 
@@ -178,37 +208,54 @@ void GrabcutOutput::OnBnClickedCallbackground()
 void GrabcutOutput::OnBnClickedPastegrab()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-
+	GrabCutImg = imread("output.png", CV_LOAD_IMAGE_UNCHANGED);
 	
-	DisplayPasteGrabcut(IDC_GRABIMG, GrabCutImg);
+	DisplayPasteGrabcut(IDC_GRABIMG, GrabCutImg, 0);
 
 }
 
 
 void GrabcutOutput::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if ((point.x <= nowCutImgPoint.x + GrabCutImg.cols / 2 && point.x >= nowCutImgPoint.x - GrabCutImg.cols / 2) 
+		&& (point.y <= nowCutImgPoint.y + GrabCutImg.rows / 2 && point.y >= nowCutImgPoint.y - GrabCutImg.rows / 2))
+	//{
+	//	SetCapture();
+		isLeftMouseDown = true;
+	//	RedrawWindow();
+	//}
 
-	isLeftMouseDown = true;
+	
 	CDialog::OnLButtonDown(nFlags, point);
 }
 
 
 void GrabcutOutput::OnLButtonUp(UINT nFlags, CPoint point)
 {
+
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (isLeftMouseDown)
+	{
+		nowCutImgPoint = point;
+		isLeftMouseDown = false;
+
+		//RedrawWindow();
+	}
 	
-	isLeftMouseDown = false;
 	CDialog::OnLButtonUp(nFlags, point);
 }
 
 
 void GrabcutOutput::OnMouseMove(UINT nFlags, CPoint point)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
-
-	mouseMovePoint = point;
+	if (isLeftMouseDown)
+	{
+		RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+		mouseMovePoint = point;
+		DisplayPasteGrabcut(IDC_GRABIMG, GrabCutImg, 1);		
+	}
+	
 	CDialog::OnMouseMove(nFlags, point);
 }
 

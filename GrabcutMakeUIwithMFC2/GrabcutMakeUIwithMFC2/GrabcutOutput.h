@@ -24,7 +24,7 @@ public:
 	afx_msg void OnRButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnStnClickedOutput();
 	void DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat);
-	void DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat);
+	void DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMatm, int mode);
 	//afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCallbackground();
 	afx_msg void OnBnClickedPastegrab();

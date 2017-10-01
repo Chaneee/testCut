@@ -55,7 +55,7 @@ Mat doGrabcut(Mat targetMat)
 		result,    // 분할 결과
 		rectangle,   // 전경을 포함하는 직사각형
 		bgModel, fgModel, // 모델
-		10,     // 반복 횟수
+		1,     // 반복 횟수
 		cv::GC_INIT_WITH_RECT);
 	
 	cv::compare(result, cv::GC_PR_FGD, tempPRFG, cv::CMP_EQ);
@@ -67,6 +67,7 @@ Mat doGrabcut(Mat targetMat)
 	targetMat.copyTo(foreground, tempPRFG);
 	targetMat.copyTo(foreground, tempFG);
 	isGrabCutFinsh = true;
+	cv::imwrite("output.png", foreground);
 	return foreground;
 	// 배경 화소는 복사되지 않음
 	/*cv::namedWindow("Result");
@@ -240,7 +241,7 @@ void CGrabcutMakeUIwithMFC2Dlg::OnBnClickedImageopen()
 		CString cstrImgPath = dlg.GetPathName();
 		//AfxMessageBox(cstrImgPath);
 		
-		inputImg = imread(string(cstrImgPath));
+		inputImg = imread(string(cstrImgPath), CV_LOAD_IMAGE_UNCHANGED);
 
 		if (inputImg.cols % 8 != 0) {
 			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols%8, inputImg.rows), 0, 0, CV_INTER_NN);

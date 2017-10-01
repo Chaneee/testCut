@@ -560,7 +560,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 	Mat leftW, upleftW, upW, uprightW;
 	calcNWeights(img, leftW, upleftW, upW, uprightW, beta, gamma);
 	Mat tempFG, tempBG, tempPRFG;
-	cv::Mat foreground(img.size(), CV_8UC3, cv::Scalar(250, 250, 250));
+	cv::Mat foreground(img.size(), CV_8UC3, cv::Scalar(255, 255,255,0));
 	for (int i = 0; i < iterCount; i++)
 	{
 		GCGraph<double> graph;
@@ -573,6 +573,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		cv::compare(mask, cv::GC_PR_FGD, tempPRFG, cv::CMP_EQ);
 		cv::compare(mask, cv::GC_FGD, tempFG, cv::CMP_EQ);
 		
+
 		cv::compare(mask, cv::GC_PR_BGD, tempBG, cv::CMP_EQ);
 		// 결과 영상 생성
 		img.copyTo(foreground, tempPRFG);
@@ -582,7 +583,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		cv::waitKey(100);*/
 		///////
 	}
-	cv::imwrite("output.png", foreground);
+	//cv::imwrite("output.png", foreground);
 }
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
