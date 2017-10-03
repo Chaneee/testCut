@@ -62,12 +62,12 @@ Mat doGrabcut(Mat targetMat)
 	cv::compare(result, cv::GC_FGD, tempFG, cv::CMP_EQ);
 
 	// 전경일 가능성이 있는 화소를 마크한 것을 가져오기
-	cv::Mat foreground(targetMat.size(), CV_8UC3, cv::Scalar(255, 255, 255));
+	cv::Mat foreground(targetMat.size(), CV_8UC4, cv::Scalar(255, 255, 255, 0));
 	// 결과 영상 생성
 	targetMat.copyTo(foreground, tempPRFG);
 	targetMat.copyTo(foreground, tempFG);
 	isGrabCutFinsh = true;
-	cv::imwrite("output.png", foreground);
+	//cv::imwrite("output.png", foreground);
 	return foreground;
 	// 배경 화소는 복사되지 않음
 	/*cv::namedWindow("Result");

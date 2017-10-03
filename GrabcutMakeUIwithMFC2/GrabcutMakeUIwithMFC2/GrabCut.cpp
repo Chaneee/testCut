@@ -534,7 +534,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 	if (img.type() != CV_8UC3)
 		CV_Error(CV_StsBadArg, "image must have CV_8UC3 type");
 	printf("Please Wait...\n");
-
+	
 	GMM bgdGMM(bgdModel), fgdGMM(fgdModel);
 	Mat compIdxs(img.size(), CV_32SC1);
 
@@ -560,7 +560,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 	Mat leftW, upleftW, upW, uprightW;
 	calcNWeights(img, leftW, upleftW, upW, uprightW, beta, gamma);
 	Mat tempFG, tempBG, tempPRFG;
-	cv::Mat foreground(img.size(), CV_8UC3, cv::Scalar(255, 255,255,0));
+	cv::Mat foreground(img.size(), CV_8UC3, cv::Scalar(4, 8,6,0));
 	for (int i = 0; i < iterCount; i++)
 	{
 		GCGraph<double> graph;
@@ -583,7 +583,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		cv::waitKey(100);*/
 		///////
 	}
-	//cv::imwrite("output.png", foreground);
+	cv::imwrite("output.png", foreground);
 }
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

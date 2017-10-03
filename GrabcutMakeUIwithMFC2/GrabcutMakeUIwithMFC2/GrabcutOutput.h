@@ -25,6 +25,7 @@ public:
 	afx_msg void OnStnClickedOutput();
 	void DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat);
 	void DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMatm, int mode);
+	void Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int mode);
 	//afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCallbackground();
 	afx_msg void OnBnClickedPastegrab();
@@ -32,4 +33,5 @@ public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnStnClickedGrabimg();
+	virtual BOOL OnInitDialog();
 };
