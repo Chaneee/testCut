@@ -337,17 +337,35 @@ static void checkMask(const Mat& img, const Mat& mask)
 /*
 Initialize mask using rectangular.
 */
-static void initMaskWithRect(Mat& mask, Size imgSize, Rect rect)
+static void initMaskWithRect(Mat& mask, Size imgSize, Rect rect, int mode)
 {
+	uchar inRect, outRect;////////////
+	if (mode == 0)
+	{
+		inRect = GC_PR_FGD;
+		outRect = GC_BGD;
+	}
+	else if (mode == 1)
+	{
+		inRect = GC_BGD;
+		//outRect = GC_PR_FGD;
+	}
+	else if (mode == 2)
+	{
+		inRect = GC_PR_FGD;
+		//outRect = GC_PR_FGD;
+	}//////////////
+
 	mask.create(imgSize, CV_8UC1);
-	mask.setTo(GC_BGD);
+	if (mode == 0)
+	mask.setTo(outRect);
 
 	rect.x = std::max(0, rect.x);
 	rect.y = std::max(0, rect.y);
 	rect.width = std::min(rect.width, imgSize.width - rect.x);
 	rect.height = std::min(rect.height, imgSize.height - rect.y);
 
-	(mask(rect)).setTo(Scalar(GC_PR_FGD));
+	(mask(rect)).setTo(Scalar(inRect));
 }
 
 /*
@@ -538,14 +556,21 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 	GMM bgdGMM(bgdModel), fgdGMM(fgdModel);
 	Mat compIdxs(img.size(), CV_32SC1);
 
+
 	if (mode == GC_INIT_WITH_RECT || mode == GC_INIT_WITH_MASK)
 	{
 		if (mode == GC_INIT_WITH_RECT)
-			initMaskWithRect(mask, img.size(), rect);
+			initMaskWithRect(mask, img.size(), rect, 0);
 		else // flag == GC_INIT_WITH_MASK
 			checkMask(img, mask);
 		initGMMs(img, mask, bgdGMM, fgdGMM);
 	}
+
+	if (mode == 1 || mode == 2)//////////////
+	{
+		initMaskWithRect(mask, img.size(), rect, mode);
+		initGMMs(img, mask, bgdGMM, fgdGMM);
+	}/////////////////////////
 	
 	if (iterCount <= 0)
 		return;
@@ -553,14 +578,14 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 	if (mode == GC_EVAL)
 		checkMask(img, mask);
 
-	const double gamma = 20;
-	const double lambda = 9 * gamma;
+	const double gamma = img.cols * img.rows / 2520; //이미지 크기에 따라 값 조절
+	const double lambda = 10 * gamma;
 	const double beta = calcBeta(img);
 
 	Mat leftW, upleftW, upW, uprightW;
 	calcNWeights(img, leftW, upleftW, upW, uprightW, beta, gamma);
 	Mat tempFG, tempBG, tempPRFG;
-	cv::Mat foreground(img.size(), CV_8UC3, cv::Scalar(4, 8,6,0));
+	cv::Mat foreground(img.size(), CV_8UC3, cv::Scalar(4, 8, 6,0));
 	for (int i = 0; i < iterCount; i++)
 	{
 		GCGraph<double> graph;
@@ -583,7 +608,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		cv::waitKey(100);*/
 		///////
 	}
-	cv::imwrite("output.png", foreground);
+	//cv::imwrite("output.png", foreground);
 }
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

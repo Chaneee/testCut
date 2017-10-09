@@ -190,7 +190,13 @@ void GrabcutOutput::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y
 				GrabCutImg.at<Vec3b>(j, i) = BGMat.at<Vec3b>(j + target_Y, i + target_X);		
 
 			}
-				
+			else
+			{
+				GrabCutImg.at<Vec3b>(j, i)[0] = /*BGMat.at<Vec3b>(j + target_Y, i + target_X)[0] / 200 **/ originMat.at<Vec3b>(j, i)[0];
+				GrabCutImg.at<Vec3b>(j, i)[1] = /*BGMat.at<Vec3b>(j + target_Y, i + target_X)[1] / 200 **/ originMat.at<Vec3b>(j, i)[1];
+				GrabCutImg.at<Vec3b>(j, i)[2] = /*BGMat.at<Vec3b>(j + target_Y, i + target_X)[2] / 200 **/ originMat.at<Vec3b>(j, i)[2];
+			}
+			
 
 		}
 	}
@@ -211,8 +217,10 @@ void GrabcutOutput::OnBnClickedCallbackground()
 	{
 		CString cstrImgPath = dlg.GetPathName();
 		//AfxMessageBox(cstrImgPath);
-
 		BGimg = imread(string(cstrImgPath));
+
+		if (BGimg.cols % 8 != 0)
+			cv::resize(BGimg, BGimg, cv::Size(BGimg.cols - BGimg.cols % 8, BGimg.rows), 0, 0, CV_INTER_NN);
 		DisplayOutput(IDC_OUTPUT, BGimg);
 		nowCutImgPoint.x = BGimg.cols + GrabCutImg.cols / 2;
 		nowCutImgPoint.y = GrabCutImg.rows / 2;

@@ -1,6 +1,7 @@
 ﻿
 // GrabcutMakeUIwithMFC2Dlg.cpp : 구현 파일
 //
+#include <vector>
 
 #include "stdafx.h"
 #include "GrabcutMakeUIwithMFC2.h"
@@ -21,11 +22,16 @@ using namespace cv;
 GrabcutOutput *outputDlg; //Output 다이얼로그
 
 //전역변수들///////////////////////
-bool isDrawingBox = false;
+bool isDrawingBox = false;// 사각형 만들 때 True : 마우스 왼쪽 누르고 있는 상태 / false : 뗀 상태
+bool isRMouseDown = false; // True : 마우스 오른쪽 누르고 있는 상태 / false : 뗀 상태
 bool isReadyInput = false;
 bool isGrabCutFinsh = false; //그랩컷 알고리즘이 끝남을 알림
-int userBoxCount = 0;
-Mat inputImg;
+int backCount = 0;
+
+Mat inputImg, originInput;
+vector<Mat> imgStore;
+cv::Mat result, tempFG, tempPRFG; // 분할 (4자기 가능한 값)
+
 //마우스 시작점, 끝점
 CPoint mouseStart, mouseEnd;
 //////////////////////////////////
@@ -33,8 +39,13 @@ CPoint mouseStart, mouseEnd;
 //CPen mouseMovePen;
 
 //그랩컷 돌아가는 함수
-Mat doGrabcut(Mat targetMat)
+Mat CGrabcutMakeUIwithMFC2Dlg::doGrabcut(Mat targetMat, int mode)
 {
+	int grabcutMode;
+	if (mode == 0)
+		grabcutMode = cv::GC_INIT_WITH_RECT;
+	else
+		grabcutMode = mode;
 
 	// Mat -> IplImage* 형 변환
 	IplImage* imageCopy;
@@ -45,29 +56,36 @@ Mat doGrabcut(Mat targetMat)
 	IplImage* tempForCopy = cvCloneImage(imageCopy);
 
 	cv::Rect rectangle(mouseStart.x, mouseStart.y, mouseEnd.x, mouseEnd.y);
-
+	
 	//사각형 안그려진 이미지를 다시 로드
 
-	cv::Mat result, tempFG, tempPRFG; // 분할 (4자기 가능한 값)
+	
 	cv::Mat bgModel, fgModel; // 모델 (초기 사용)
-
+	
 	cv::grabCut(targetMat,    // 입력 영상
 		result,    // 분할 결과
 		rectangle,   // 전경을 포함하는 직사각형
 		bgModel, fgModel, // 모델
 		1,     // 반복 횟수
-		cv::GC_INIT_WITH_RECT);
+		grabcutMode);
 	
 	cv::compare(result, cv::GC_PR_FGD, tempPRFG, cv::CMP_EQ);
 	cv::compare(result, cv::GC_FGD, tempFG, cv::CMP_EQ);
 
 	// 전경일 가능성이 있는 화소를 마크한 것을 가져오기
-	cv::Mat foreground(targetMat.size(), CV_8UC4, cv::Scalar(255, 255, 255, 0));
+	cv::Mat foreground(targetMat.size(), CV_8UC3, cv::Scalar(4, 8, 6, 0));
 	// 결과 영상 생성
 	targetMat.copyTo(foreground, tempPRFG);
 	targetMat.copyTo(foreground, tempFG);
+	
+	foreground.copyTo(inputImg);
+
+	DisplayImage(IDC_PIC, foreground);
 	isGrabCutFinsh = true;
-	//cv::imwrite("output.png", foreground);
+	cv::imwrite("output.png", foreground);
+
+	imgStore.push_back(foreground);
+	//backCount = 0; //초기화
 	return foreground;
 	// 배경 화소는 복사되지 않음
 	/*cv::namedWindow("Result");
@@ -97,6 +115,8 @@ public:
 // 구현입니다.
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
@@ -139,6 +159,9 @@ BEGIN_MESSAGE_MAP(CGrabcutMakeUIwithMFC2Dlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
+	ON_WM_RBUTTONUP()
+	ON_WM_RBUTTONDOWN()
+	ON_BN_CLICKED(IDC_Back, &CGrabcutMakeUIwithMFC2Dlg::OnBnClickedBack)
 END_MESSAGE_MAP()
 
 
@@ -198,7 +221,18 @@ void CGrabcutMakeUIwithMFC2Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 void CGrabcutMakeUIwithMFC2Dlg::OnPaint()
 {
 	//그랩컷 끝나기 전엔 버튼 비활성화
-	if(!isGrabCutFinsh) GetDlgItem(IDC_OutputBtn)->EnableWindow(FALSE); 
+	if (!isGrabCutFinsh)
+	{
+		//ouput버튼
+		GetDlgItem(IDC_OutputBtn)->EnableWindow(FALSE);
+		//뒤로가기버튼
+		GetDlgItem(IDC_Back)->EnableWindow(FALSE);
+		DisplayImage(IDC_PIC, inputImg);
+	}
+
+		
+
+		
 	
 	if (IsIconic())
 	{
@@ -243,9 +277,11 @@ void CGrabcutMakeUIwithMFC2Dlg::OnBnClickedImageopen()
 		
 		inputImg = imread(string(cstrImgPath), CV_LOAD_IMAGE_UNCHANGED);
 
-		if (inputImg.cols % 8 != 0) {
+		if (inputImg.cols % 8 != 0) 
 			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols%8, inputImg.rows), 0, 0, CV_INTER_NN);
-		}
+
+		imgStore.push_back(inputImg);
+		inputImg.copyTo(originInput);
 		DisplayImage(IDC_PIC, inputImg);
 		isReadyInput = true;
 	}
@@ -295,6 +331,7 @@ void CGrabcutMakeUIwithMFC2Dlg::DisplayImage(int IDC_PICTURE_TARGET, Mat targetM
 		//dcImageTraget.StretchBlt(100, 100, inputImg.cols-100, inputImg.rows-100, &dcImageTraget, 0, 0, inputImg.cols+100, inputImg.rows+100,SRCCOPY);
 		cvReleaseImage(&tempImage);
 	}
+	
 }
 
 
@@ -311,11 +348,12 @@ void CGrabcutMakeUIwithMFC2Dlg::OnBnClickedOutputbtn()
 void CGrabcutMakeUIwithMFC2Dlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	if (isReadyInput) {
+	if (isReadyInput || isGrabCutFinsh) {
 		mouseStart = point;
 		isDrawingBox = true;
 		oldMousePoint = point;
 	}
+
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
 
@@ -330,14 +368,17 @@ void CGrabcutMakeUIwithMFC2Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 		CClientDC dc(this);
 		CPen pen;
-		pen.CreatePen(PS_DOT, 1, RGB(255, 0, 0));    // 빨간색 펜을 생성
+		pen.CreatePen(PS_DOT, 2, RGB(0, 255, 0));    // 빨간색 펜을 생성
 		CPen* oldPen = dc.SelectObject(&pen);
 		CBrush brush;
 		brush.CreateStockObject(NULL_BRUSH);    // 투명 브러시
 		CBrush* pOldBrush = dc.SelectObject(&brush);
 		dc.Rectangle(grabRect);
 		dc.SelectObject(pOldBrush);
-		doGrabcut(inputImg); //그랩컷 실행
+		if(!isGrabCutFinsh)
+			doGrabcut(inputImg, 0); //그랩컷 실행
+		else if(isGrabCutFinsh)
+			doGrabcut(originInput, 2); //그랩컷 실행
 		isDrawingBox = false;
 		isReadyInput = false;
 	}
@@ -350,9 +391,11 @@ void CGrabcutMakeUIwithMFC2Dlg::OnMouseMove(UINT nFlags, CPoint point)
 	nowMousePos = point;
 	CPen mouseMovePen;
 	//Invalidate();
-	// 마우스 누른채로 드래그하면 상자 생성
 
-	if (isDrawingBox) {
+
+
+	// 마우스 누른채로 드래그하면 상자 생성
+	if (isDrawingBox || isRMouseDown) {
 		CRect grabRect;
 		CClientDC dc(this);
 
@@ -369,6 +412,7 @@ void CGrabcutMakeUIwithMFC2Dlg::OnMouseMove(UINT nFlags, CPoint point)
 		ReleaseDC(cdc);
 		CDialog::OnMouseMove(nFlags, point);
 
+		//if (isRMouseDown) inputImg.at<uchar>(point.x, point.y) = GC_BGD;
 		/*grabRect.SetRect(mouseStart.x, mouseStart.y, point.x, point.y);
 		
 		mouseMovePen.CreatePen(PS_DOT, 1, RGB(255, 0, 0));    // 빨간색 펜을 생성
@@ -382,6 +426,87 @@ void CGrabcutMakeUIwithMFC2Dlg::OnMouseMove(UINT nFlags, CPoint point)
 	}
 
 	//그랩컷 종료 후 버튼 활성화
-	if (isGrabCutFinsh) GetDlgItem(IDC_OutputBtn)->EnableWindow(TRUE);
+	if (isGrabCutFinsh)
+	{
+		GetDlgItem(IDC_OutputBtn)->EnableWindow(TRUE);
+		//뒤로가기버튼 비활성
+		if (imgStore.size() >= 1)
+			 GetDlgItem(IDC_Back)->EnableWindow(TRUE);
+		
+	}
+
+	//오른쪽 마우스 누른채로 드래그하면 다시 배경 제거
+	/*if (isRMouseDown)
+	{
+		//mouseMovePen.CreatePen(PS_DOT, 1, RGB(255, 0, 0));    // 빨간색 펜을 생성
+		inputImg.at<uchar>(point.y, point.x) = GC_BGD;
+	}*/
+
 	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+
+void CGrabcutMakeUIwithMFC2Dlg::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	if (isGrabCutFinsh)
+	{
+		mouseStart = point;
+		isRMouseDown = true;
+		oldMousePoint = point;
+	}
+
+	CDialogEx::OnRButtonDown(nFlags, point);
+}
+
+
+void CGrabcutMakeUIwithMFC2Dlg::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	/*if (isRMouseDown)
+	{
+		mouseEnd = point;
+		inputImg.at<uchar>(point.y, point.x) = GC_BGD;
+		doGrabcut(inputImg, 1);
+		isRMouseDown = false;
+	}*/
+	if (isRMouseDown) {
+		mouseEnd = point;
+		CRect grabRect;
+		grabRect.SetRect(mouseStart.x, mouseStart.y, mouseEnd.x, mouseEnd.y);
+
+		CClientDC dc(this);
+		CPen pen;
+		pen.CreatePen(PS_DASH, 2, RGB(255, 0, 0));    // 빨간색 펜을 생성
+		CPen* oldPen = dc.SelectObject(&pen);
+		CBrush brush;
+		brush.CreateStockObject(NULL_BRUSH);    // 투명 브러시
+		CBrush* pOldBrush = dc.SelectObject(&brush);
+		dc.Rectangle(grabRect);
+		dc.SelectObject(pOldBrush);
+		//inputImg.at<uchar>(point.x, point.y) = GC_BGD;
+		doGrabcut(originInput, 1); //그랩컷 실행
+		
+		isRMouseDown = false;
+		
+	}
+	
+
+	CDialogEx::OnRButtonUp(nFlags, point);
+}
+
+
+
+void CGrabcutMakeUIwithMFC2Dlg::OnBnClickedBack()
+{
+	imgStore.pop_back();
+	if (imgStore.size() == 1)
+	{
+		DisplayImage(IDC_PIC, originInput);
+		isGrabCutFinsh = false;
+		isReadyInput = true;
+
+		GetDlgItem(IDC_Back)->EnableWindow(FALSE);
+	}
+		
+	else
+		DisplayImage(IDC_PIC, imgStore[imgStore.size() - 1]);		
 }

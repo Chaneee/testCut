@@ -196,6 +196,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Back.h" />
     <ClInclude Include="gcgraph.hpp" />
     <ClInclude Include="GrabcutMakeUIwithMFC2.h" />
     <ClInclude Include="GrabcutMakeUIwithMFC2Dlg.h" />
