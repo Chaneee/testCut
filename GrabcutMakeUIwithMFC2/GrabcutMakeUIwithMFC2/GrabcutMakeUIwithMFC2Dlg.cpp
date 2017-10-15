@@ -82,7 +82,7 @@ Mat CGrabcutMakeUIwithMFC2Dlg::doGrabcut(Mat targetMat, int mode)
 
 	DisplayImage(IDC_PIC, foreground);
 	isGrabCutFinsh = true;
-	cv::imwrite("output.png", foreground);
+	
 
 	imgStore.push_back(foreground);
 	//backCount = 0; //초기화
@@ -331,6 +331,7 @@ void CGrabcutMakeUIwithMFC2Dlg::DisplayImage(int IDC_PICTURE_TARGET, Mat targetM
 		//dcImageTraget.StretchBlt(100, 100, inputImg.cols-100, inputImg.rows-100, &dcImageTraget, 0, 0, inputImg.cols+100, inputImg.rows+100,SRCCOPY);
 		cvReleaseImage(&tempImage);
 	}
+	cv::imwrite("output.png", targetMat);
 	
 }
 

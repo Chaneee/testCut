@@ -179,7 +179,7 @@ void GrabcutOutput::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, i
 //두 이미지를 합성하는 함수
 void GrabcutOutput::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int mode)
 {
-	//mode 0 : 그냥 합성(배경부분 갖다붙이기만)
+	//mode 0 : 그냥 합성(배경부분 갖다붙이기)
 
 	for (int i = 0;i < originMat.cols;i++)
 	{
@@ -190,8 +190,9 @@ void GrabcutOutput::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y
 				GrabCutImg.at<Vec3b>(j, i) = BGMat.at<Vec3b>(j + target_Y, i + target_X);		
 
 			}
-			else
+			else 
 			{
+				
 				GrabCutImg.at<Vec3b>(j, i)[0] = /*BGMat.at<Vec3b>(j + target_Y, i + target_X)[0] / 200 **/ originMat.at<Vec3b>(j, i)[0];
 				GrabCutImg.at<Vec3b>(j, i)[1] = /*BGMat.at<Vec3b>(j + target_Y, i + target_X)[1] / 200 **/ originMat.at<Vec3b>(j, i)[1];
 				GrabCutImg.at<Vec3b>(j, i)[2] = /*BGMat.at<Vec3b>(j + target_Y, i + target_X)[2] / 200 **/ originMat.at<Vec3b>(j, i)[2];
