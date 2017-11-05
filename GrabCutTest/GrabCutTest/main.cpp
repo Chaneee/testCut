@@ -20,6 +20,7 @@ bool isDrawingBox = false;
 int userBoxCount = 0;
 double maxTemp = 0;
 double allminTemp = 0;
+Mat image;
 
 static double calcBeta(const Mat& img)
 {
@@ -124,9 +125,49 @@ void drawBox(IplImage* img, CvRect rectangle) {
 
 }
 
+void seamcarving()
+{
+	//첫째줄을 돌면서 시작점 찾기
+	double startTemp = 0;
+	int startPointX = 0;
+	for (int x = 0; x < image.cols; x++)
+	{
+		if (allEnergy.at<double>(0, x) != 0)
+		{
+			startTemp = findMin(allEnergy.at<double>(0, x), startTemp);
+		}
+
+		if (startTemp = allEnergy.at<double>(0, x))	startPointX = x;
+	}
+
+	//심카빙
+	for (int y = 0; y < image.rows; y++)
+	{
+		if (y == 0)
+			image.at<Vec3b>(y, startPointX) = 0;
+
+		else
+		{
+			double minTemp = maxTemp;
+			int tmpX = 0;
+			//	printf("%d   d오옹아아우ㅏ\n", x);
+			for (int x = -2; x < 3; x++)
+			{
+				if (x + startPointX < 0 || x + startPointX > image.cols - 1 || allEnergy.at<double>(y, x + startPointX) == 0) continue;
+				minTemp = findMin(allEnergy.at<double>(y, x + startPointX), minTemp)
+
+					if (minTemp == allEnergy.at<double>(y, x + startPointX))	tmpX = x + startPointX;
+			}
+			startPointX = tmpX;
+			//printf("%d   d오옹아아우ㅏ\n", startPointX);
+			image.at<Vec3b>(y, startPointX) = 0;
+		}
+	}
+}
+
 int main()
 {
-	cv::Mat image = cv::imread("input.jpg");
+	image = cv::imread("input.jpg");
 	cv::namedWindow("Original Image");
 	cv::imshow("Original Image", image);
 	double minimum = 10000;
@@ -145,47 +186,7 @@ int main()
 	Mat leftW, upleftW, upW, uprightW;
 	calcNWeights(image, leftW, upleftW, upW, uprightW, beta, gamma);
 
-	//첫째줄을 돌면서 시작점 찾기
-	double startTemp = 0;
-	int startPointX = 0;
-	for (int x = 0; x < image.cols; x++)
-	{
-		if (allEnergy.at<double>(0, x) != 0)
-		{
-			startTemp = findMin(allEnergy.at<double>(0, x), startTemp);
-		}
-
-		if (startTemp = allEnergy.at<double>(0, x))	startPointX = x;
-	}
-
-	//sort(th, th + (image.rows * image.cols));
-
 	
-	//printf("%d   \n%d\n\n", maxTemp < allminTemp ? allminTemp : maxTemp, allminTemp);
-
-	
-	for (int y = 0; y < image.rows; y++)
-	{
-		if (y == 0)
-			image.at<Vec3b>(y, startPointX) = 0;
-
-		else
-		{
-			double minTemp = maxTemp;
-			int tmpX = 0;
-		//	printf("%d   d오옹아아우ㅏ\n", x);
-			for (int x = -3; x < 4; x++)
-			{
-				if (x + startPointX < 0 || x + startPointX > image.cols-1 || allEnergy.at<double>(y, x + startPointX) == 0) continue;
-				minTemp = findMin(allEnergy.at<double>(y, x + startPointX), minTemp)
-
-				if (minTemp == allEnergy.at<double>(y, x + startPointX))	tmpX = x + startPointX;
-			}
-			startPointX = tmpX;
-			//printf("%d   d오옹아아우ㅏ\n", startPointX);
-			image.at<Vec3b>(y, startPointX) = 0;
-		}
-	}
 
 	/*for (int y = 0; y < image.rows; y++)
 	{
@@ -199,6 +200,7 @@ int main()
 				
 		}
 	}*/
+	seamcarving();
 	
 	cv::namedWindow("Foreground");
 	cv::imshow("Foreground", image);

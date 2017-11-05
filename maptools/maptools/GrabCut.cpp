@@ -579,9 +579,10 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 	if (mode == GC_EVAL)
 		checkMask(img, mask);
 
-	const double gamma = 60;/*img.cols * img.rows / ((img.cols + img.rows)*10); //이미지 크기에 따라 값 조절*/
-	const double lambda = 10 * gamma;
 	const double beta = calcBeta(img);
+	const double gamma = beta * (img.cols * img.rows);/*img.cols * img.rows / ((img.cols + img.rows)*10); //이미지 크기에 따라 값 조절*/
+	const double lambda = 10 * gamma;
+	
 
 	Mat leftW, upleftW, upW, uprightW;
 	calcNWeights(img, leftW, upleftW, upW, uprightW, beta, gamma);

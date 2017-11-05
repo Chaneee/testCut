@@ -17,7 +17,6 @@
 #define IDC_CALLBACKGROUND              1004
 #define IDC_PASTEGRAB                   1005
 #define IDC_GRABIMG                     1007
-#define IDC_BUTTON2                     1009
 #define IDC_Back                        1009
 
 // Next default values for new objects

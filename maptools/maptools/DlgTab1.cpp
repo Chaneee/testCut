@@ -21,7 +21,7 @@ bool isReadyInput = false;
 bool isGrabCutFinsh = false; //그랩컷 알고리즘이 끝남을 알림
 int backCount = 0;
 
-Mat inputImg, originInput;
+Mat inputImg, originInput, outPutImg;
 vector<Mat> imgStore;
 cv::Mat result, tempFG, tempPRFG; // 분할 (4자기 가능한 값)
 
@@ -63,6 +63,7 @@ BEGIN_MESSAGE_MAP(CDlgTab1, CDialog)
 	ON_WM_RBUTTONUP()
 	ON_WM_MOUSEMOVE()
 	ON_BN_CLICKED(IDC_Back, &CDlgTab1::OnClickedBack)
+	ON_WM_PAINT()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,6 +102,11 @@ Mat CDlgTab1::doGrabcut(Mat targetMat, int mode)
 
 	// 전경일 가능성이 있는 화소를 마크한 것을 가져오기
 	cv::Mat foreground(targetMat.size(), CV_8UC3, cv::Scalar(4, 8, 6, 0));
+
+	for (int i = 0;i < targetMat.cols;i++)
+		for (int j = 0;j < targetMat.rows;j++)
+			foreground.at<Vec3b>(j, i) = targetMat.at<Vec3b>(j, i) * 0.2;
+
 	// 결과 영상 생성
 	targetMat.copyTo(foreground, tempPRFG);
 	targetMat.copyTo(foreground, tempFG);
@@ -212,6 +218,7 @@ void CDlgTab1::DisplayImage(int IDC_PICTURE_TARGET, Mat targetMat)
 	//Mat saveImg;
 	//targetMat.copyTo(saveImg);
 	//saveImg = targetMat(Range(originRangeStart.x, originRangeStart.y), Range(originRangeEnd.x, originRangeEnd.y));
+	outPutImg = targetMat;
 	cv::imwrite("output.png", targetMat);
 
 }
@@ -236,8 +243,9 @@ void CDlgTab1::OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pResult)
 
 void CDlgTab1::OnBnClickedButton2()
 {
+	cv::imwrite("output.png", outPutImg);
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	MessageBox(TEXT("Hello??????!"));
+	//MessageBox(TEXT("Hello??????!"));
 }
 
 //불러오기
@@ -260,7 +268,7 @@ void CDlgTab1::OnBnClickedButton1()
 
 		imgStore.push_back(inputImg);
 		inputImg.copyTo(originInput);
-
+		cv::imwrite("originInput.png", originInput);
 
 		DisplayImage(IDC_PIC, inputImg);
 		isReadyInput = true;
@@ -368,8 +376,6 @@ void CDlgTab1::OnMouseMove(UINT nFlags, CPoint point)
 	CPen mouseMovePen;
 	//Invalidate();
 
-
-
 	// 마우스 누른채로 드래그하면 상자 생성
 	if (isDrawingBox || isRMouseDown) {
 		CRect grabRect;
@@ -391,14 +397,13 @@ void CDlgTab1::OnMouseMove(UINT nFlags, CPoint point)
 	}
 
 	//그랩컷 종료 후 버튼 활성화
-/*	if (isGrabCutFinsh)
+	if (isGrabCutFinsh)
 	{
-		GetDlgItem(IDC_OutputBtn)->EnableWindow(TRUE);
-		//뒤로가기버튼 비활성
+		//되돌리기버튼 비활성
 		if (imgStore.size() >= 1)
 			GetDlgItem(IDC_Back)->EnableWindow(TRUE);
 
-	}*/
+	}
 
 	CDialog::OnMouseMove(nFlags, point);
 }
@@ -418,4 +423,20 @@ void CDlgTab1::OnClickedBack()
 
 	else
 		DisplayImage(IDC_PIC, imgStore[imgStore.size() - 1]);
+}
+
+
+void CDlgTab1::OnPaint()
+{
+	CPaintDC dc(this); // device context for painting
+					   // TODO: 여기에 메시지 처리기 코드를 추가합니다.
+					   // 그리기 메시지에 대해서는 CDialog::OnPaint()을(를) 호출하지 마십시오.
+
+	//그랩컷 끝나기 전엔 버튼 비활성화
+	if (!isGrabCutFinsh)
+	{
+		//뒤로가기버튼
+		GetDlgItem(IDC_Back)->EnableWindow(FALSE);
+		//DisplayImage(IDC_PIC, inputImg);
+	}
 }

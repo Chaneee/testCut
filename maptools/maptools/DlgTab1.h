@@ -42,4 +42,5 @@ public:
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnClickedBack();
+	afx_msg void OnPaint();
 };
