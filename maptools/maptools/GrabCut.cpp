@@ -483,7 +483,7 @@ static void constructGCGraph(const Mat& img, const Mat& mask, const GMM& bgdGMM,
 			else if (mask.at<uchar>(p) == GC_BGD)
 			{
 				fromSource = 0;
-				toSink = lambda*10000;
+				toSink = lambda * 100;
 			}
 			else // GC_FGD
 			{
@@ -580,7 +580,7 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		checkMask(img, mask);
 
 	const double beta = calcBeta(img);
-	const double gamma = beta * (img.cols * img.rows);/*img.cols * img.rows / ((img.cols + img.rows)*10); //이미지 크기에 따라 값 조절*/
+	const double gamma = 60;/*img.cols * img.rows / ((img.cols + img.rows)*10); //이미지 크기에 따라 값 조절*/
 	const double lambda = 10 * gamma;
 	
 

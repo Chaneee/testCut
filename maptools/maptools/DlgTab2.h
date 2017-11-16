@@ -1,4 +1,5 @@
 #pragma once
+#include "afxwin.h"
 
 
 // CDlgTab2 대화 상자입니다.
@@ -24,6 +25,8 @@ public:
 	void DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat);
 	void DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMatm, int mode);
 	void Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int mode);
+	int RGBtoYCbCr(Mat img, int mode, int y, int x);
+	int kMeanss(int clusterMemberCount, int sum, int mode);
 
 	afx_msg void OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnNMCustomdrawSlider1(NMHDR *pNMHDR, LRESULT *pResult);
@@ -34,4 +37,6 @@ public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnBnClickedCallbgd();
+	CButton test;
+	CStatic testpic;
 };

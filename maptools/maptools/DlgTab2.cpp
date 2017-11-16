@@ -12,7 +12,7 @@ Mat originGrabImg, GrabCutImg;
 Mat canny;
 CPoint mouseMovePoint;
 CPoint nowCutImgPoint = 0;
-Mat originGrab = imread("originInput.png", CV_LOAD_IMAGE_UNCHANGED);
+Mat originGrab;
 bool isLeftMouseDown = false; // True : 마우스 왼쪽 누르고 있는 상태 / false : 뗀 상태
 bool isStartEdit = false; //OnPaint부분에서 GrabCutImg를 부르기 때문에 써야하는 변수
 							  
@@ -124,7 +124,7 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 			tempImage = cvCreateImage(cvSize(targetIplImage->width, targetIplImage->height), IPL_DEPTH_8U, 3);
 			cvCvtColor(targetIplImage, tempImage, CV_GRAY2BGR);
 		}
-		else if (targetIplImage->nChannels == 3)
+		else if (targetIplImage->nChannels == 3 || targetIplImage->nChannels == 4)
 		{
 			tempImage = cvCloneImage(targetIplImage);
 		}
@@ -144,6 +144,7 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 		else if (mode == 1)
 		{
 			DisplayOutput(IDC_Back, BGimg);
+			//DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
 			::StretchDIBits(dcImageTraget.GetSafeHdc(), mouseMovePoint.x - GrabCutImg.cols / 2, mouseMovePoint.y - GrabCutImg.rows / 2,
 				rcImageTraget.right, rcImageTraget.bottom,
 				0, 0, tempImage->width, tempImage->height, tempImage->imageData, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
@@ -158,33 +159,97 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 	}
 }
 
+//평균 구하는 함수
+int CDlgTab2::kMeanss(int clusterMemberCount, int sum, int mode)
+{
+	int A;
+
+	
+	A = sum / clusterMemberCount;
+
+
+	return A;
+}
+
+//RGB값을 YCbCr값으로. 0 = Y, 1 = Cb, 2 = Cr
+int CDlgTab2::RGBtoYCbCr(Mat img, int mode, int y, int x)
+{
+	int A;
+	/*for (int y = 0; y < img.rows; y++)
+	{
+		for (int x = 0; x < img.cols; x++)
+		{*/
+	if (mode == 0) // Y
+		A = 0.299 * img.at<Vec3b>(y, x)[2] + (0.587 * img.at<Vec3b>(y, x)[1]) + (0.114 * img.at<Vec3b>(y, x)[0]);
+	//			A.push_back((0.299 * img.at<Vec3b>(y, x)[2]) + (0.587 * img.at<Vec3b>(y, x)[1]) + (0.114 * img.at<Vec3b>(y, x)[0]));
+	else if (mode == 1) // Cb
+		A = (-0.16874) * img.at<Vec3b>(y, x)[2] - (0.33126 * img.at<Vec3b>(y, x)[1]) + (0.5 * img.at<Vec3b>(y, x)[0]);
+	//			A.push_back(((-0.16874) * img.at<Vec3b>(y, x)[2]) - (0.33126 * img.at<Vec3b>(y, x)[1]) + (0.5 * img.at<Vec3b>(y, x)[0]));
+	else if (mode == 2) // Cr
+		A = (0.5 * img.at<Vec3b>(y, x)[2]) - (0.41869 * img.at<Vec3b>(y, x)[1]) - (0.08131 * img.at<Vec3b>(y, x)[0]);
+	//			A.push_back((0.5 * img.at<Vec3b>(y, x)[2]) - (0.41869 * img.at<Vec3b>(y, x)[1]) - (0.08131 * img.at<Vec3b>(y, x)[0]));
+//		}
+//	}
+	return A;
+}
+
 //두 이미지를 합성하는 함수
 void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int mode)
 {
-	//mode 0 : 그냥 합성(배경부분 갖다붙이기)
+	int sum[3] = { 0, 0, 0}; // 0:Y, 1:Cb, 2:Cr
+	vector<int> inputY, inputCb, inputCr;
+	int avrY, avrCb, avrCr;
+	int clusterMemberCount = 0;
 
+	//mode 0 : 그냥 합성(배경부분 갖다붙이기)
 	for (int i = 0;i < originMat.cols;i++)
 	{
 		for (int j = 0;j < originMat.rows;j++)
 		{
-		if (originMat.at<Vec3b>(j, i) == originGrab.at<Vec3b>(j, i) * 0.2)
-				GrabCutImg.at<Vec3b>(j, i) = BGMat.at<Vec3b>(j + target_Y, i + target_X);
-
-			
-			else if (canny.at<uchar>(j, i) == 255)
+			if (originMat.at<Vec3b>(j, i) == originGrab.at<Vec3b>(j, i) * 0.2)
+					GrabCutImg.at<Vec3b>(j, i) = BGMat.at<Vec3b>(j + target_Y, i + target_X);
+	
+			else /*if (canny.at<uchar>(j, i) == 255)*/
 			{
-
-				GrabCutImg.at<Vec3b>(j, i)[0] = BGMat.at<Vec3b>(j + target_Y, i + target_X)[0] * 2 / 3 + originMat.at<Vec3b>(j, i)[0] * 1 / 3;
-
-				GrabCutImg.at<Vec3b>(j, i)[1] = BGMat.at<Vec3b>(j + target_Y, i + target_X)[1] * 2 / 3 + originMat.at<Vec3b>(j, i)[1] * 1 / 3;
-
+				sum[0] += RGBtoYCbCr(BGMat, 0, j, i);
+				sum[1] += RGBtoYCbCr(BGMat, 1, j, i);
+				sum[2] += RGBtoYCbCr(BGMat, 2, j, i);
+				inputY.push_back(RGBtoYCbCr(originMat, 0, j, i));
+				inputCb.push_back(RGBtoYCbCr(originMat, 1, j, i));
+				inputCr.push_back(RGBtoYCbCr(originMat, 2, j, i));
+				clusterMemberCount++;
+			/*	GrabCutImg.at<Vec3b>(j, i)[0] = BGMat.at<Vec3b>(j + target_Y, i + target_X)[0] * 1 / 2 + originMat.at<Vec3b>(j, i)[0] * 1 / 2;
+				GrabCutImg.at<Vec3b>(j, i)[1] = BGMat.at<Vec3b>(j + target_Y, i + target_X)[1] * 1 / 2 + originMat.at<Vec3b>(j, i)[1] * 1 / 2;
 				//GrabCutImg.at<Vec3b>(j, i)[1] = /*BGMat.at<Vec3b>(j + target_Y, i + target_X)[1] / 200 * originMat.at<Vec3b>(j, i)[1];
-				GrabCutImg.at<Vec3b>(j, i)[2] = BGMat.at<Vec3b>(j + target_Y, i + target_X)[2] * 2 / 3 + originMat.at<Vec3b>(j, i)[2] * 1 / 3;
-
+				GrabCutImg.at<Vec3b>(j, i)[2] = BGMat.at<Vec3b>(j + target_Y, i + target_X)[2] * 1 / 2 + originMat.at<Vec3b>(j, i)[2] * 1 / 2;
+			*/
 
 			}
 		}
 	}
+	
+	//현재위치의 YCbCr 평균구함
+	avrY = sum[0] / clusterMemberCount;
+	avrCb = sum[1] / clusterMemberCount;
+	avrCr = sum[2] / clusterMemberCount;
+	int t = 0;
+	for (int i = 0;i < originMat.cols;i++)
+	{
+		for (int j = 0;j < originMat.rows;j++)
+		{
+			if (originMat.at<Vec3b>(j, i) != originGrab.at<Vec3b>(j, i) * 0.2)
+			{
+
+				GrabCutImg.at<Vec3b>(j, i)[0] = (avrY/2 + (2*inputY[t]/4)) + (1.772 * ((2*inputCb[t]/4) + avrCb/2));
+				GrabCutImg.at<Vec3b>(j, i)[1] = (avrY/2 + (2 * inputY[t] / 4)) - (0.34414 * ((2 * inputCb[t] / 4) + avrCb/2)) - (0.71414 * ((2 * inputCr[t] / 4) + avrCr/2));
+				GrabCutImg.at<Vec3b>(j, i)[2] = (avrY/2 + (2 * inputY[t] / 4)) + (1.402 * ((2 * inputCr[t] / 4) + avrCr/2));
+
+				t++;
+				if (t > clusterMemberCount) break;
+			}
+		}
+	}
+
 }
 
 // CDlgTab2 메시지 처리기입니다.
@@ -196,11 +261,16 @@ void CDlgTab2::OnPaint()
 					   // 그리기 메시지에 대해서는 CDialog::OnPaint()을(를) 호출하지 마십시오.
 	if (!isStartEdit)
 	{
+		originGrab = imread("originInput.png", CV_LOAD_IMAGE_UNCHANGED);
 		GrabCutImg = imread("output.png", CV_LOAD_IMAGE_UNCHANGED);
+		if (GrabCutImg.cols % 8 != 0)
+			cv::resize(GrabCutImg, GrabCutImg, cv::Size(GrabCutImg.cols - GrabCutImg.cols % 8, GrabCutImg.rows), 0, 0, CV_INTER_NN);
+		if (originGrab.cols % 8 != 0)
+			cv::resize(originGrab, originGrab, cv::Size(originGrab.cols - originGrab.cols % 8, originGrab.rows), 0, 0, CV_INTER_NN);
 		GrabCutImg.copyTo(originGrabImg);
-		GrabCutImg.copyTo(canny);
-		cv::cvtColor(GrabCutImg, canny, CV_BGR2GRAY);
-		cv::Canny(canny, canny, 200, 200);
+	//	GrabCutImg.copyTo(canny);
+	//	cv::cvtColor(GrabCutImg, canny, CV_BGR2GRAY);
+	//	cv::Canny(canny, canny, 200, 200);
 		//EdgePosition();
 		DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
 	}
@@ -252,6 +322,7 @@ void CDlgTab2::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if (isLeftMouseDown)
 	{
+		isLeftMouseDown = false;
 		Compose(BGimg, originGrabImg, point.x - GrabCutImg.cols / 2, point.y - GrabCutImg.rows / 2, 1);
 		RedrawWindow();
 
@@ -260,7 +331,7 @@ void CDlgTab2::OnLButtonUp(UINT nFlags, CPoint point)
 		DisplayPasteGrabcut(IDC_Back, GrabCutImg, 1);
 
 		nowCutImgPoint = point;
-		isLeftMouseDown = false;
+		
 
 	}
 
@@ -295,8 +366,11 @@ void CDlgTab2::OnBnClickedCallbgd()
 		if (BGimg.cols % 8 != 0)
 			cv::resize(BGimg, BGimg, cv::Size(BGimg.cols - BGimg.cols % 8, BGimg.rows), 0, 0, CV_INTER_NN);
 		DisplayOutput(IDC_Back, BGimg);
+		
+		//Fix me:
 		nowCutImgPoint.x = BGimg.cols + GrabCutImg.cols / 2;
 		nowCutImgPoint.y = GrabCutImg.rows / 2;
 	}
 	isStartEdit = true;
 }
+

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <functional>
+#include <vector>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -21,6 +22,9 @@ int userBoxCount = 0;
 double maxTemp = 0;
 double allminTemp = 0;
 Mat image;
+vector<double> xEnergyVector, yEnergyVector;
+vector<double> rowSeam;
+
 
 static double calcBeta(const Mat& img)
 {
@@ -79,8 +83,9 @@ static void calcNWeights(const Mat& img, Mat& leftW, Mat& upleftW, Mat& upW, Mat
 				Vec3d diff = color - (Vec3d)img.at<Vec3b>(y, x - 1);
 				leftW.at<double>(y, x) = gamma * exp(-beta*diff.dot(diff));
 				allEnergy.at<double>(y, x) += leftW.at<double>(y, x);
-				maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
-				allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
+		//		printf("%d   \n", img.at<Vec3b>(y,x));
+				//maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
+				//allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
 			}
 			else
 				leftW.at<double>(y, x) = 0;
@@ -89,8 +94,8 @@ static void calcNWeights(const Mat& img, Mat& leftW, Mat& upleftW, Mat& upW, Mat
 				Vec3d diff = color - (Vec3d)img.at<Vec3b>(y - 1, x - 1);
 				upleftW.at<double>(y, x) = gammaDivSqrt2 * exp(-beta*diff.dot(diff));
 				allEnergy.at<double>(y, x) += upleftW.at<double>(y, x);
-				maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
-				allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
+				//maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
+				//allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
 			}
 			else
 				upleftW.at<double>(y, x) = 0;
@@ -99,8 +104,8 @@ static void calcNWeights(const Mat& img, Mat& leftW, Mat& upleftW, Mat& upW, Mat
 				Vec3d diff = color - (Vec3d)img.at<Vec3b>(y - 1, x);
 				upW.at<double>(y, x) = gamma * exp(-beta*diff.dot(diff));
 				allEnergy.at<double>(y, x) += upW.at<double>(y, x);
-				maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
-				allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
+				//maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
+				//allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
 			}
 			else
 				upW.at<double>(y, x) = 0;
@@ -109,11 +114,14 @@ static void calcNWeights(const Mat& img, Mat& leftW, Mat& upleftW, Mat& upW, Mat
 				Vec3d diff = color - (Vec3d)img.at<Vec3b>(y - 1, x + 1);
 				uprightW.at<double>(y, x) = gammaDivSqrt2 * exp(-beta*diff.dot(diff));
 				allEnergy.at<double>(y, x) += uprightW.at<double>(y, x);
-				maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
-				allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
+				//maxTemp = findMax(maxTemp, allEnergy.at<double>(y, x));
+				//allminTemp = findMin(allEnergy.at<double>(y, x), allminTemp);
 			}
 			else
 				uprightW.at<double>(y, x) = 0;
+
+			//if (y == 0) xEnergyVector.push_back(allEnergy.at<double>(y, x));
+			//if (x == 0) yEnergyVector.push_back(allEnergy.at<double>(y, x));
 		}
 	}
 }
@@ -125,44 +133,62 @@ void drawBox(IplImage* img, CvRect rectangle) {
 
 }
 
-void seamcarving()
+double seamcarving(int startPointX, int i, int mode)
 {
-	//첫째줄을 돌면서 시작점 찾기
-	double startTemp = 0;
-	int startPointX = 0;
-	for (int x = 0; x < image.cols; x++)
-	{
-		if (allEnergy.at<double>(0, x) != 0)
-		{
-			startTemp = findMin(allEnergy.at<double>(0, x), startTemp);
-		}
-
-		if (startTemp = allEnergy.at<double>(0, x))	startPointX = x;
-	}
-
+	//if (mode==1) printf("%d   \n", startPointX);
+	double ret = 0;
 	//심카빙
 	for (int y = 0; y < image.rows; y++)
 	{
 		if (y == 0)
-			image.at<Vec3b>(y, startPointX) = 0;
+			ret = allEnergy.at<double>(y, startPointX);
+			//image.at<Vec3b>(y, startPointX) = 0;
 
 		else
 		{
-			double minTemp = maxTemp;
+			double minTemp = image.cols * image.rows * 1000;
+			double maxTemp = 0;
 			int tmpX = 0;
-			//	printf("%d   d오옹아아우ㅏ\n", x);
-			for (int x = -2; x < 3; x++)
-			{
-				if (x + startPointX < 0 || x + startPointX > image.cols - 1 || allEnergy.at<double>(y, x + startPointX) == 0) continue;
-				minTemp = findMin(allEnergy.at<double>(y, x + startPointX), minTemp)
+			//mode 0	
 
-					if (minTemp == allEnergy.at<double>(y, x + startPointX))	tmpX = x + startPointX;
-			}
-			startPointX = tmpX;
-			//printf("%d   d오옹아아우ㅏ\n", startPointX);
-			image.at<Vec3b>(y, startPointX) = 0;
+				for (int x = -1; x < 2; x++)
+				{
+					if (x + startPointX < 0 || x + startPointX > image.cols - 1 || allEnergy.at<double>(y, x + startPointX) == 0) continue;
+
+					minTemp = findMin(allEnergy.at<double>(y, x + startPointX), minTemp)
+
+						if (minTemp == allEnergy.at<double>(y, x + startPointX))	tmpX = x + startPointX;
+					//2차원배열에 새겨보자!!ㄴㄴ
+				}
+				
+				startPointX = tmpX;
+				ret += minTemp;
+			
+				if (mode == 1)
+				{
+					image.at<Vec3b>(y, startPointX) = 0;
+					
+					for (int c = startPointX; c < image.cols; c++)
+					{
+						
+						if(c == image.cols - 1) image.at<Vec3b>(y, c) = image.at<Vec3b>(y, c);
+
+						else
+						{
+							allEnergy.at<double>(y, c) = allEnergy.at<double>(y, c + 1);
+						//	image.at<Vec3b>(y, c) = image.at<Vec3b>(y, c + 1);
+
+							if (y == 0)	rowSeam[c] = rowSeam[c + 1];
+						}
+					}
+				}
 		}
 	}
+	cv::namedWindow("Foreground");
+	cv::imshow("Foreground", image);
+	cv::waitKey(1);
+
+	return ret;
 }
 
 int main()
@@ -181,12 +207,22 @@ int main()
 		for (int x = 0; x < image.cols; x++)
 			allEnergy.at<double>(y, x) = 0;
 
-	const double gamma = 100;
+	const double gamma = 1;
 	const double beta = calcBeta(image);
+	
 	Mat leftW, upleftW, upW, uprightW;
+
 	calcNWeights(image, leftW, upleftW, upW, uprightW, beta, gamma);
 
-	
+	//정렬을 위한 x축 에너지 배열과 y축 에너지 배열
+/*	double *xEnergyArr = new double[xEnergyVector.size()];
+	double *yEnergyArr = new double[yEnergyVector.size()];
+
+	//for (int i = 0;i < xEnergyVector.size();i++)	xEnergyArr[i] = xEnergyVector[i];
+	//for (int i = 0;i < yEnergyVector.size();i++)	yEnergyArr[i] = yEnergyVector[i];
+	//sort(xEnergyArr, xEnergyArr + xEnergyVector.size());
+	//sort(yEnergyArr, yEnergyArr + yEnergyVector.size());
+	sort(xEnergyVector.begin(), xEnergyVector.end());*/
 
 	/*for (int y = 0; y < image.rows; y++)
 	{
@@ -200,13 +236,55 @@ int main()
 				
 		}
 	}*/
-	seamcarving();
-	
+
+	//seam을 저장하기 위한 배열
+	double *rowSeams = new double[image.cols];
+
+	double *colSeams = new double[image.rows];
+
+	//첫째줄을 돌면서 시작점 찾기
+	double startTemp = 0;
+
+
+		for (int x = 0; x < image.cols; x++)	rowSeam.push_back(seamcarving(x, 0, 0));
+
+		
+
+
+	//double *tmpRow = new double[image.cols];
+	//tmpRow = rowSeams;
+	vector<double> tempRow;
+	//for (int i = 0;i < xEnergyVector.size();i++)	tempRow.push_back(rowSeam[i]);
+	tempRow.clear();
+	tempRow.assign(rowSeam.begin(), rowSeam.end());
+
+	sort(tempRow.begin(), tempRow.end(), greater<double>());
+	//for (int j = 0;j < image.cols;j++) printf("%d   ;;; %d \n", tempRow[j], rowSeam[j]);
+	int a = 0;
+
+	for (int i = 0; i < 200; i++)
+	{
+		
+		for (int j = 0;j < image.cols-i;j++)
+		{
+			if (tempRow[i] == rowSeam[j])
+			{
+				seamcarving(j, i, 1);
+				Rect cutRect(0, 0, image.cols - (i), image.rows);
+			//	image = image(cutRect);
+				continue;
+			}
+		}
+	}
+		
 	cv::namedWindow("Foreground");
 	cv::imshow("Foreground", image);
+	cv::waitKey(0);
+	
+	
 	//cv::imwrite("output.jpg", image);
 
-	cv::waitKey(0);
+	
 
 	/*rectangleBox = cvRect(-1, -1, 0, 0);
 

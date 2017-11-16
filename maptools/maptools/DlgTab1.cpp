@@ -28,6 +28,8 @@ cv::Mat result, tempFG, tempPRFG; // 분할 (4자기 가능한 값)
 								  //마우스 시작점, 끝점
 CPoint mouseStart, mouseEnd;
 CPoint originRangeStart, originRangeEnd;
+
+Rect firstRect;
 //////////////////////////////////
 
 
@@ -82,9 +84,27 @@ Mat CDlgTab1::doGrabcut(Mat targetMat, int mode)
 	imageCopy = &temp;
 
 	IplImage* tempForCopy = cvCloneImage(imageCopy);
+	CPoint Temp = mouseEnd;
+	::GetCursorPos(&Temp);
+	if (Temp.y > originInput.rows)
+		mouseEnd.y = originInput.rows - 10;
+	if (Temp.x > originInput.cols)
+		mouseEnd.x = originInput.cols - 10;
 
 	cv::Rect rectangle(mouseStart.x, mouseStart.y, mouseEnd.x, mouseEnd.y);
+	
+	if (mode == 0)
+	{	//	mouseEnd.x = mouseEnd.x - (originInput.cols*0.3);
+		//	mouseEnd.y = mouseEnd.y - (originInput.rows*0.3);
+		int startX = mouseStart.x, startY = mouseStart.y, endX = mouseEnd.x - (originInput.cols*0.3), endY = mouseEnd.y - (originInput.rows*0.35);
+		cv::Rect rect(startX, startY, endX, endY );
+		firstRect = rect;
+		Mat cutOrigin(targetMat.size(), CV_8UC3) ;
+		targetMat.copyTo(cutOrigin);
+		cutOrigin = targetMat(rect);
 
+		cv::imwrite("originInput.png", cutOrigin);
+	}
 	//사각형 안그려진 이미지를 다시 로드
 
 
@@ -126,53 +146,6 @@ Mat CDlgTab1::doGrabcut(Mat targetMat, int mode)
 //디스플레이 함수
 void CDlgTab1::DisplayImage(int IDC_PICTURE_TARGET, Mat targetMat)
 {
-	/*IplImage* targetIplImage = new IplImage(targetMat);
-	if (targetIplImage != nullptr) {
-	CWnd* pWnd_ImageTraget = (CWnd*)GetDlgItem(IDC_PICTURE_TARGET);//
-	CDC *dc = pWnd_ImageTraget->GetDC();////
-	CStatic *staticSize = (CStatic *)GetDlgItem(IDC_PICTURE_TARGET);////
-	//CClientDC dcImageTraget(pWnd_ImageTraget);
-
-	CRect rcImageTraget; //
-	pWnd_ImageTraget->GetClientRect(&rcImageTraget);
-	rcImageTraget.top = 0;
-	rcImageTraget.left = 0;
-	rcImageTraget.bottom = targetMat.rows;
-	rcImageTraget.right = targetMat.cols;
-	CString path = _T("C:\\Users\Chan\Desktop\test\GrabCutTest\GrabCutTest\\input.jpg");
-	staticSize->GetClientRect(rcImageTraget);////
-	m_Img.Load(path);
-	m_Img.Draw(dc->m_hDC, 0, 0, m_Img.GetWidth(), m_Img.GetHeight());
-	/*
-	BITMAPINFO bitmapInfo;
-	memset(&bitmapInfo, 0, sizeof(bitmapInfo));
-	bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bitmapInfo.bmiHeader.biPlanes = 1;
-	bitmapInfo.bmiHeader.biCompression = BI_RGB;
-	bitmapInfo.bmiHeader.biWidth = targetIplImage->width;
-	bitmapInfo.bmiHeader.biHeight = -targetIplImage->height;
-
-	IplImage *tempImage = nullptr;
-
-	if (targetIplImage->nChannels == 1)
-	{
-	tempImage = cvCreateImage(cvSize(targetIplImage->width/10, targetIplImage->height/10), IPL_DEPTH_8U, 3);
-	cvCvtColor(targetIplImage, tempImage, CV_GRAY2BGR);
-	}
-	else if (targetIplImage->nChannels == 3)
-	{
-	tempImage = cvCloneImage(targetIplImage);
-	}
-
-	bitmapInfo.bmiHeader.biBitCount = tempImage->depth * tempImage->nChannels;
-
-	dcImageTraget.SetStretchBltMode(COLORONCOLOR);
-	::StretchDIBits(dcImageTraget.GetSafeHdc(), rcImageTraget.left, rcImageTraget.top, rcImageTraget.right, rcImageTraget.bottom,
-	0, 0, tempImage->width, tempImage->height, tempImage->imageData, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
-
-	/////////////////////
-	//dcImageTraget.StretchBlt(100, 100, inputImg.cols-100, inputImg.rows-100, &dcImageTraget, 0, 0, inputImg.cols+100, inputImg.rows+100,SRCCOPY);
-	cvReleaseImage(&tempImage);*/
 	IplImage* targetIplImage = new IplImage(targetMat);
 	if (targetIplImage != nullptr) {
 		CWnd* pWnd_ImageTraget = GetDlgItem(IDC_PICTURE_TARGET);
@@ -219,7 +192,10 @@ void CDlgTab1::DisplayImage(int IDC_PICTURE_TARGET, Mat targetMat)
 	//targetMat.copyTo(saveImg);
 	//saveImg = targetMat(Range(originRangeStart.x, originRangeStart.y), Range(originRangeEnd.x, originRangeEnd.y));
 	outPutImg = targetMat;
-	cv::imwrite("output.png", targetMat);
+	Mat cutGrab;
+	cutGrab = targetMat(firstRect);
+	cv::imwrite("output.png", cutGrab);
+	//cv::imwrite("output.png", targetMat);
 
 }
 
@@ -262,14 +238,15 @@ void CDlgTab1::OnBnClickedButton1()
 
 		//AfxMessageBox(cstrImgPath);
 		inputImg = imread(string(cstrImgPathString), CV_LOAD_IMAGE_UNCHANGED);
+		
 
 		if (inputImg.cols % 8 != 0)
 			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols % 8, inputImg.rows), 0, 0, CV_INTER_NN);
 
 		imgStore.push_back(inputImg);
 		inputImg.copyTo(originInput);
-		cv::imwrite("originInput.png", originInput);
-
+		
+		
 		DisplayImage(IDC_PIC, inputImg);
 		isReadyInput = true;
 	}
@@ -303,6 +280,10 @@ void CDlgTab1::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if (isDrawingBox) {
 		mouseEnd = point;
+	//	mouseEnd.x = mouseEnd.x - (originInput.cols*0.3);
+	//	mouseEnd.y = mouseEnd.y - (originInput.rows*0.3);
+
+		//GetCursorPos(&mouseEnd);
 		CRect grabRect;
 		grabRect.SetRect(mouseStart.x, mouseStart.y, mouseEnd.x, mouseEnd.y);
 
@@ -373,11 +354,17 @@ void CDlgTab1::OnRButtonUp(UINT nFlags, CPoint point)
 void CDlgTab1::OnMouseMove(UINT nFlags, CPoint point)
 {
 	nowMousePos = point;
+	//nowMousePos.x = nowMousePos.x - (originInput.cols*0.3);
+	//nowMousePos.y = nowMousePos.y - (originInput.rows*0.3);
+	
+	//::GetCursorPos(&nowMousePos);
+	//SetCursorPos(nowMousePos.x -(originInput.cols*0.3), nowMousePos.y-(originInput.rows*0.3));
 	CPen mouseMovePen;
 	//Invalidate();
 
 	// 마우스 누른채로 드래그하면 상자 생성
 	if (isDrawingBox || isRMouseDown) {
+		//mouse_event(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE, nowMousePos.x * 65535 / 1920, nowMousePos.y * 65535 / 1080, 0, 0);
 		CRect grabRect;
 		CClientDC dc(this);
 
@@ -392,7 +379,7 @@ void CDlgTab1::OnMouseMove(UINT nFlags, CPoint point)
 
 		oldMousePoint = point;       // 끝점을 저장해준다.
 		ReleaseDC(cdc);
-		CDialog::OnMouseMove(nFlags, point);
+		//CDialog::OnMouseMove(nFlags, point);
 
 	}
 
@@ -439,4 +426,15 @@ void CDlgTab1::OnPaint()
 		GetDlgItem(IDC_Back)->EnableWindow(FALSE);
 		//DisplayImage(IDC_PIC, inputImg);
 	}
+}
+
+
+BOOL CDlgTab1::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+	ShowWindow(SW_SHOWMAXIMIZED);
+	// TODO:  여기에 추가 초기화 작업을 추가합니다.
+
+	return TRUE;  // return TRUE unless you set the focus to a control
+				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
 }
