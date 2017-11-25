@@ -71,9 +71,10 @@ static void calcNWeights(const Mat& img, Mat& sobelMat)
 {
 
 	int energy = 0;
-	int arr[8][2] = { { -1,-1 }, { -1,0 }, { -1,1 },
-					  { 0,-1 }, 			{ 0,1 },
-					  { 1,-1 }, { 1,0 },  { 1,1 } };
+	int arr[8][2] = { 
+			 { -1,-1 }, { -1,0 }, { -1,1 }, 
+			 { 0,-1 },			  { 0,1 },  
+			 { 1,-1 }, { 1,0 },   { 1,1 } };
 		
 
 	for (int y = 0; y < img.rows; y++)
@@ -83,7 +84,7 @@ static void calcNWeights(const Mat& img, Mat& sobelMat)
 		{
 			for (int i = 0; i < 8; i++)
 			{
-				if (y + arr[i][0] < 0 || x + arr[i][1] < 0 || y + arr[i][0] == img.rows || x + arr[i][1] == img.cols)
+				if (y + arr[i][0] < 0 || x + arr[i][1] < 0 || y + arr[i][0] >= img.rows || x + arr[i][1] >= img.cols)
 					continue;
 
 				energy += pow(sobelMat.at<uchar>(y, x) - sobelMat.at<uchar>(y + arr[i][0], x + arr[i][1]), 2);
@@ -130,7 +131,7 @@ int seamcarving(int startPointX, Mat& sobelMat, int mode, int cutCount)
 			//mode 0	
 		//	if (startPointX - 1 < 0 || startPointX + 1 > image.cols - cutCount - 1) minTemp = ev[y * image.cols + startPointX];
 		//	else minTemp = findMinn(ev[y * image.cols + startPointX -1], ev[y * image.cols + startPointX], ev[y * image.cols + startPointX + 1]);
-				for (int x = -1; x < 2; x++)
+				for (int x = -1; x <= 1; x++)
 				{
 					
 					if (x + startPointX < 0 || x + startPointX > image.cols - cutCount - 1) continue;
@@ -168,8 +169,9 @@ int seamcarving(int startPointX, Mat& sobelMat, int mode, int cutCount)
 					}
 				}*/
 			/*	if (mode == 0)	isVist[y * image.cols + tmpX] = image.cols * image.rows * 100000;
-				if (mode == 1)*/	isVist[y * image.cols + tmpX] = image.cols * image.rows * 0;
-				ret += maxTemp;
+				if (mode == 1)*/	
+				//isVist[y * image.cols + tmpX] = image.cols * image.rows * 0;
+				ret += minTemp;
 				startPointX = tmpX;
 				
 			
@@ -182,13 +184,13 @@ int seamcarving(int startPointX, Mat& sobelMat, int mode, int cutCount)
 
 					for (int c = startPointX; c < image.cols - cutCount; c++)
 					{
-						if (c == image.cols - cutCount - 1) image.at<Vec3b>(y, c) = 0;
+						if (c == image.cols - cutCount - 1) image.at<Vec3b>(y, c) = image.at<Vec3b>(y, c);
 						//printf("%d&&&&&&&&&&&&&   \n", startPointX);
 						else
 						{
 							//a.at<uchar>(y, c) = a.at<uchar>(y, c + 1);
-							ev[y * image.cols + c] = ev[y * image.cols + c + 1];
-							image.at<Vec3b>(y, c) = image.at<Vec3b>(y, c + 1);
+					//		ev[y * image.cols + c] = ev[y * image.cols + c + 1];
+					//		image.at<Vec3b>(y, c) = image.at<Vec3b>(y, c + 1);
 
 						if (y == 0)	rowSeam[c] = rowSeam[c + 1];
 						}
@@ -214,10 +216,11 @@ int main()
 	cv::cvtColor(image, sobelMat, CV_BGR2GRAY);
 	cv::Sobel(sobelMat, sobelMat, CV_8U, 0, 1, 3, 0.6, 128);
 	cv::Sobel(sobelMat, sobelMat, CV_8U, 1, 0, 3, 0.6, 128);
-	cv::namedWindow("Foreground");
-	cv::imshow("Foreground", sobelMat);
-	cv::waitKey(0);
 	calcNWeights(image, sobelMat);
+/*	cv::namedWindow("Foreground");
+	cv::imshow("Foreground", sobelMat);
+	cv::waitKey(0);*/
+	
 
 
 	isVist.assign(ev.begin(), ev.end());
@@ -238,8 +241,8 @@ int main()
 			if (tempRow[i] == rowSeam[j])
 			{
 				seamcarving(j, sobelMat, 1, i);
-				Rect cutRect(0, 0, origin.cols - (i+j), image.rows);
-				image = origin(cutRect);
+				Rect cutRect(0, 0, origin.cols - (i+1), image.rows);
+			//	image = origin(cutRect);
 				cv::namedWindow("Foreground");
 				cv::imshow("Foreground", image);
 				cv::waitKey(1);
@@ -249,7 +252,7 @@ int main()
 				cv::Sobel(sobelMat, sobelMat, CV_8U, 1, 0, 3, 0.7, 128);
 				calcNWeights(image, sobelMat);*/
 				isVist.assign(ev.begin(), ev.end());
-				continue;
+				j = image.cols;
 			}
 		}
 	}

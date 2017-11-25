@@ -1,5 +1,6 @@
 #pragma once
 #include "afxwin.h"
+#include "afxcmn.h"
 
 
 // CDlgTab2 대화 상자입니다.
@@ -39,4 +40,12 @@ public:
 	afx_msg void OnBnClickedCallbgd();
 	CButton test;
 	CStatic testpic;
+	
+//	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	CSliderCtrl widthSlide;
+	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	CSliderCtrl heightSlide;
+	CSliderCtrl allSlide;
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 };
