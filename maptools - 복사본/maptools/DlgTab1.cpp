@@ -39,6 +39,7 @@ IMPLEMENT_DYNAMIC(CDlgTab1, CDialog)
 
 CDlgTab1::CDlgTab1(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_DIALOG1, pParent)
+	, m_bWaitCursor(false)
 {
 	
 }
@@ -66,6 +67,7 @@ BEGIN_MESSAGE_MAP(CDlgTab1, CDialog)
 	ON_WM_MOUSEMOVE()
 	ON_BN_CLICKED(IDC_Back, &CDlgTab1::OnClickedBack)
 	ON_WM_PAINT()
+	ON_WM_SETCURSOR()
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,8 +79,8 @@ Mat CDlgTab1::doGrabcut(Mat targetMat, int mode)
 	else
 		grabcutMode = mode;
 
-	// Mat -> IplImage* 형 변환
-	IplImage* imageCopy;
+	// Mat -> IplImage* 형 변환 왜하는거더라 이거
+/*	IplImage* imageCopy;
 	IplImage temp;
 	temp = targetMat;
 	imageCopy = &temp;
@@ -89,15 +91,15 @@ Mat CDlgTab1::doGrabcut(Mat targetMat, int mode)
 	if (Temp.y > originInput.rows)
 		mouseEnd.y = originInput.rows - 10;
 	if (Temp.x > originInput.cols)
-		mouseEnd.x = originInput.cols - 10;
+		mouseEnd.x = originInput.cols - 10;*/
 
 	cv::Rect rectangle(mouseStart.x, mouseStart.y, mouseEnd.x, mouseEnd.y);
 	
 	if (mode == 0)
 	{	//	mouseEnd.x = mouseEnd.x - (originInput.cols*0.3);
 		//	mouseEnd.y = mouseEnd.y - (originInput.rows*0.3);
-		int startX = mouseStart.x, startY = mouseStart.y, endX = mouseEnd.x - (originInput.cols*0.3), endY = mouseEnd.y - (originInput.rows*0.35);
-		cv::Rect rect(startX, startY, endX, endY );
+		int startX = mouseStart.x, startY = mouseStart.y, endX = mouseEnd.x - mouseStart.x, endY = mouseEnd.y - mouseStart.y;
+		cv::Rect rect(startX, startY, endX, endY ); //잘라내기위함
 		firstRect = rect;
 		Mat cutOrigin(targetMat.size(), CV_8UC3) ;
 		targetMat.copyTo(cutOrigin);
@@ -132,7 +134,7 @@ Mat CDlgTab1::doGrabcut(Mat targetMat, int mode)
 	targetMat.copyTo(foreground, tempFG);
 
 	foreground.copyTo(inputImg);
-
+	m_bWaitCursor = FALSE;
 	DisplayImage(IDC_PIC, foreground);
 	isGrabCutFinsh = true;
 
@@ -239,6 +241,12 @@ void CDlgTab1::OnBnClickedButton1()
 		//AfxMessageBox(cstrImgPath);
 		inputImg = imread(string(cstrImgPathString), CV_LOAD_IMAGE_UNCHANGED);
 		
+		//크기조절
+		if(inputImg.rows > 514)
+			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols * 514 / inputImg.rows, 514), 0, 0, CV_INTER_NN);
+
+		if (inputImg.cols > 470)
+			cv::resize(inputImg, inputImg, cv::Size(470, inputImg.rows * 470 / inputImg.cols), 0, 0, CV_INTER_NN);
 
 		if (inputImg.cols % 8 != 0)
 			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols % 8, inputImg.rows), 0, 0, CV_INTER_NN);
@@ -263,6 +271,10 @@ void CDlgTab1::OnBnClickedButton4()
 //마우스 왼쪽 이벤트
 void CDlgTab1::OnLButtonDown(UINT nFlags, CPoint point)
 {
+
+	if (!inputImg.data)
+		return;
+
 	if (isReadyInput || isGrabCutFinsh) {
 		if (!isGrabCutFinsh)
 			originRangeStart = point;
@@ -279,7 +291,12 @@ void CDlgTab1::OnLButtonDown(UINT nFlags, CPoint point)
 void CDlgTab1::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if (isDrawingBox) {
-		mouseEnd = point;
+		if (point.x >= inputImg.cols)	mouseEnd.x = inputImg.cols;
+		else mouseEnd.x = point.x;
+
+		if (point.y >= inputImg.rows)	mouseEnd.y = inputImg.rows;
+		else mouseEnd.y = point.y;
+
 	//	mouseEnd.x = mouseEnd.x - (originInput.cols*0.3);
 	//	mouseEnd.y = mouseEnd.y - (originInput.rows*0.3);
 
@@ -296,6 +313,7 @@ void CDlgTab1::OnLButtonUp(UINT nFlags, CPoint point)
 		CBrush* pOldBrush = dc.SelectObject(&brush);
 		dc.Rectangle(grabRect);
 		dc.SelectObject(pOldBrush);
+		m_bWaitCursor = TRUE;
 		if (!isGrabCutFinsh)
 		{
 			originRangeEnd = point;
@@ -304,6 +322,7 @@ void CDlgTab1::OnLButtonUp(UINT nFlags, CPoint point)
 
 		else if (isGrabCutFinsh)
 			doGrabcut(originInput, 2); //그랩컷 실행
+		
 		isDrawingBox = false;
 		isReadyInput = false;
 	}
@@ -432,9 +451,18 @@ void CDlgTab1::OnPaint()
 BOOL CDlgTab1::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	ShowWindow(SW_SHOWMAXIMIZED);
+	//ShowWindow(SW_SHOWMAXIMIZED);
 	// TODO:  여기에 추가 초기화 작업을 추가합니다.
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
+}
+
+
+BOOL CDlgTab1::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
+{
+	SetCursor(LoadCursor(NULL, m_bWaitCursor ? IDC_WAIT : IDC_ARROW));
+	return TRUE;
+
+	return CDialog::OnSetCursor(pWnd, nHitTest, message);
 }

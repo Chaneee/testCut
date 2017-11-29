@@ -26,10 +26,13 @@ public:
 	void DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat);
 	void DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMatm, int mode);
 	void Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int mode);
-	int RGBtoYCbCr(Mat img, int mode, int y, int x);
+	cv::Vec3d RGBtoYCbCr(cv::Vec3d bgr);
+	cv::Vec3d YCbCrtoRGB(cv::Vec3d YCbCr);
 	int kMeanss(int clusterMemberCount, int sum, int mode);
 	void calcEnergy(const Mat& img, Mat& sobelMat);
-	int seamcarving(int startPointX, Mat& sobelMat, int mode, int cutCount);
+	int seamcarving(int startPointX, int mode, int cutCount);
+	void seamEnergyDown();
+	CPoint RevisionPoint(CPoint point, CPoint pivot);
 
 	afx_msg void OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnNMCustomdrawSlider1(NMHDR *pNMHDR, LRESULT *pResult);
@@ -50,4 +53,5 @@ public:
 	CSliderCtrl allSlide;
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnBnClickedSeamdelete();
 };

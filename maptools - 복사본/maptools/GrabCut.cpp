@@ -483,11 +483,11 @@ static void constructGCGraph(const Mat& img, const Mat& mask, const GMM& bgdGMM,
 			else if (mask.at<uchar>(p) == GC_BGD)
 			{
 				fromSource = 0;
-				toSink = lambda * 100;
+				toSink = lambda * 300;
 			}
 			else // GC_FGD
 			{
-				fromSource = lambda;
+				fromSource = lambda * 100;
 				toSink = 0;
 			}
 			graph.addTermWeights(vtxIdx, fromSource, toSink);
@@ -580,8 +580,8 @@ void cv::grabCut(InputArray _img, InputOutputArray _mask, Rect rect,
 		checkMask(img, mask);
 
 	const double beta = calcBeta(img);
-	const double gamma = 60;/*img.cols * img.rows / ((img.cols + img.rows)*10); //이미지 크기에 따라 값 조절*/
-	const double lambda = 10 * gamma;
+	const double gamma = 100;/*img.cols * img.rows / ((img.cols + img.rows)*10); //이미지 크기에 따라 값 조절*/
+	const double lambda = 50 * gamma;
 	
 
 	Mat leftW, upleftW, upW, uprightW;

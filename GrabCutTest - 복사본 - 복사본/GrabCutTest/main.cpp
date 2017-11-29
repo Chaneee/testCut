@@ -28,6 +28,7 @@ vector<int> rowSeam;
 vector<int> ev;
 vector<int> tmpVec;
 vector<int> isVist;
+vector<int> tempRow;
 
 static double calcBeta(const Mat& img)
 {
@@ -135,6 +136,8 @@ int seamcarving(int startPoint, Mat& sobelMat, int mode, int cutCount)
 				ret += ev[startPoint * image.cols + tmpX];
 				//startX = tmpX;
 			}
+			if (startPoint == image.rows - 1)
+				tempRow.push_back(ev[(image.rows - 1) * image.cols + startX]);
 		}
 	 }
 
@@ -214,12 +217,12 @@ int main()
 	for (int y = 1; y < image.rows; y++)	seamcarving(y, sobelMat, 0, 0);
 
 
-	vector<int> tempRow;
+/*	vector<int> tempRow;
 	tempRow.clear();
 	for (int x = 0; x < image.cols; x++)
 	{
 		tempRow.push_back(ev[(image.rows - 1) * image.cols + x]);
-	}
+	}*/
 //	tempRow.assign(rowSeam.begin(), rowSeam.end());
 	std::sort(tempRow.begin(), tempRow.end());
 	
@@ -231,8 +234,9 @@ int main()
 		{
 			if (tempRow[i] == ev[(image.rows - 1) * image.cols + j])
 			{
-				seamcarving(j, sobelMat, 1, i);
+				seamcarving(j, sobelMat, 1, 0);
 				Rect cutRect(0, 0, origin.cols - (i+1), image.rows);
+				copyMakeBorder(image, image, 0, 0, 0, 100, BORDER_CONSTANT);
 		//		image = origin(cutRect);
 				cv::namedWindow("Foreground");
 				cv::imshow("Foreground", image);
