@@ -31,7 +31,7 @@ public:
 	int kMeanss(int clusterMemberCount, int sum, int mode);
 	void calcEnergy(const Mat& img, Mat& sobelMat);
 	int seamcarving(int startPointX, int mode, int cutCount);
-	void seamEnergyDown();
+	void seamEnergyDown(int mode);
 	CPoint RevisionPoint(CPoint point, CPoint pivot);
 
 	afx_msg void OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pResult);
@@ -54,4 +54,5 @@ public:
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnBnClickedSeamdelete();
+	afx_msg void OnBnClickedAutocolorbtn();
 };

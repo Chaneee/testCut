@@ -40,9 +40,11 @@ bool isRbtnClick = false;
 vector<int> xEnergyVector, yEnergyVector;
 vector<int> rowSeam;
 vector<int> downEv, rightEv;
+Mat dEv;
 vector<int> tempEv, originEv;
 bool isSeamDel = false;//심카빙삭제버튼 클릭
 CPoint delStartP, delEndP;
+bool isObjresize = false;
 ///////////////////////////////
 
 // CDlgTab2 대화 상자입니다.
@@ -87,6 +89,8 @@ END_MESSAGE_MAP()
 //이미지 디스플레이를 위한 함수 : 배경
 void CDlgTab2::DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat)
 {
+	dEv = cv::Mat(targetMat.size(), CV_64FC3);
+
 	if (targetMat.cols > 956)
 		cv::resize(targetMat, targetMat, cv::Size(956, targetMat.rows *  956 / targetMat.cols), 0, 0, CV_INTER_NN);
 	if (targetMat.rows > 700)
@@ -141,6 +145,7 @@ void CDlgTab2::DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat)
 			//dcImageTraget.StretchBlt(100, 100, inputImg.cols-100, inputImg.rows-100, &dcImageTraget, 0, 0, inputImg.cols+100, inputImg.rows+100,SRCCOPY);
 			cvReleaseImage(&tempImage);
 	}
+	delete targetIplImage;
 }
 
 //이미지 디스플레이를 위한 함수 : (mode=0 : 붙여넣기, mode=1 : 이동, mode=2 : 사이즈조절)
@@ -291,6 +296,7 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 		//	dcImageTraget.StretchBlt(0, 0, GrabCutImg.cols-100, GrabCutImg.rows-100, &dcImageTraget, 0, 0, GrabCutImg.cols, GrabCutImg.rows,SRCCOPY);
 
 	}
+	delete targetIplImage;
 }
 
 //평균 구하는 함수
@@ -370,14 +376,6 @@ cv::Vec3d CDlgTab2::YCbCrtoRGB(cv::Vec3d YCbCr) {
 //두 이미지를 합성하는 함수
 void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int mode)
 {
-	double sumBgYCbCr[3] = { 0, 0, 0}; // 0:Y, 1:Cb, 2:Cr
-	double sumObjYCbCr[3] = { 0, 0, 0 }; // 0:Y, 1:Cb, 2:Cr
-	vector<int> inputY, inputCb, inputCr;
-	double avrBgY, avrBgCb, avrBgCr;
-	double avrObjY, avrObjCb, avrObjCr;
-	double SdBgYCbCr[3] = { 0, 0, 0 }; // 0:Y, 1:Cb, 2:Cr
-	double SdObjYCbCr[3] = { 0, 0, 0 }; // 0:Y, 1:Cb, 2:Cr
-	//double addY = 0, addCb = 0, addCr = 0;
 	int clusterMemberCount = 0, firstCount = 0;
 	float bgRatio = 0, objectRatio = 1, dist = 0;
 	int arr[24][2] = { 
@@ -529,7 +527,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 void CDlgTab2::calcEnergy(const Mat& img, Mat& sobelMat)
 {
 
-	int energy = 0;
+	double energy = 0;
 	int arr[8][2] = {
 			 { -1,-1 }, { -1,0 }, { -1,1 },
 			 { 0,-1 },			  { 0,1 },
@@ -548,7 +546,7 @@ void CDlgTab2::calcEnergy(const Mat& img, Mat& sobelMat)
 
 				energy += sqrt(pow(sobelMat.at<uchar>(y, x) - sobelMat.at<uchar>(y + arr[i][0], x + arr[i][1]), 2));
 			}
-
+			dEv.at<double>(y, x) = energy;
 		//	if (y == 0) xEnergyVector.push_back(energy);
 			downEv.push_back(energy);
 			rightEv.push_back(energy);
@@ -585,13 +583,16 @@ int CDlgTab2::seamcarving(int startPoint, int mode, int cutCount)
 
 					if (x + startX < 0 || x + startX > BGimg.cols - cutCount - 1) continue;
 
-					minTemp = findMin(downEv[(startPoint - 1) * BGimg.cols + startX + x], minTemp);
-					if (minTemp == downEv[(startPoint - 1) * BGimg.cols + startX + x])	tmpX = x + startX;
+					/*minTemp = findMin(downEv[(startPoint - 1) * BGimg.cols + startX + x], minTemp);
+					if (minTemp == downEv[(startPoint - 1) * BGimg.cols + startX + x])	tmpX = x + startX;*/
+					minTemp = findMin(dEv.at<double>(startPoint-1, startX), minTemp);
+					if (minTemp == dEv.at<double>(startPoint - 1, startX))	tmpX = x + startX;
 				}
 
-				downEv[startPoint * BGimg.cols + tmpX] += minTemp;
-				
-				ret += downEv[startPoint * BGimg.cols + tmpX];
+				//downEv[startPoint * BGimg.cols + tmpX] += minTemp;
+				dEv.at<double>(startPoint, startX) += minTemp;
+
+				//ret += downEv[startPoint * BGimg.cols + tmpX];
 				//startX = tmpX;
 			}
 
@@ -873,6 +874,7 @@ void CDlgTab2::OnLButtonUp(UINT nFlags, CPoint point)
 		Compose(BGimg, saveOrigin, LUpoint.x, LUpoint.y, 1);
 		RedrawWindow();
 		DisplayPasteGrabcut(IDC_Back, saveImg, 2);
+		if (isObjresize) seamEnergyDown(1);
 	}
 
 	CDialog::OnLButtonUp(nFlags, point);
@@ -935,7 +937,7 @@ void CDlgTab2::OnMouseMove(UINT nFlags, CPoint point)
 			cv::resize(saveImg, saveImg, cv::Size(saveImg.cols - saveImg.cols % 8, saveImg.rows), 0, 0, CV_INTER_NN);
 		if (saveOrigin.cols % 8 != 0)
 			cv::resize(saveOrigin, saveOrigin, cv::Size(saveOrigin.cols - saveOrigin.cols % 8, saveOrigin.rows), 0, 0, CV_INTER_NN);
-
+		
 		DisplayPasteGrabcut(IDC_Back, saveImg, 2);
 	}
 
@@ -1245,8 +1247,8 @@ void CDlgTab2::OnRButtonUp(UINT nFlags, CPoint point)
 		dc.Rectangle(grabRect);
 		dc.SelectObject(pOldBrush);
 		//inputImg.at<uchar>(point.x, point.y) = GC_BGD;
-		seamEnergyDown();//에너지 낮추기
-
+		if(!isObjresize)	seamEnergyDown(0);//에너지 낮추기
+		isObjresize = true;
 		isSeamDel = false;
 	}
 
@@ -1260,7 +1262,7 @@ void CDlgTab2::OnBnClickedSeamdelete()
 	isSeamDel = true;
 }
 
-void CDlgTab2::seamEnergyDown()
+void CDlgTab2::seamEnergyDown(int mode)
 {
 	int rectRows = delEndP.y - delStartP.y;
 	int rectCols = delEndP.x - delStartP.x;
@@ -1292,7 +1294,7 @@ void CDlgTab2::seamEnergyDown()
 					if (tempEv[Count] == downEv[(BGimg.rows - 1) * BGimg.cols + j])
 					{
 						cutCount++;
-						copyMakeBorder(BGimg, BGimg, 0, 0, 0, 1, BORDER_CONSTANT);
+						copyMakeBorder(BGimg, BGimg, 0, 0, 0, 1, BORDER_REPLICATE);
 						for (int q = 1; q <= BGimg.rows; q++)
 						{
 							if (q == BGimg.rows) downEv.push_back(0);
@@ -1301,11 +1303,15 @@ void CDlgTab2::seamEnergyDown()
 						BGimg.copyTo(originBGimg);
 						seamcarving(j, 3, cutCount);
 
-						if (BGimg.cols % 8 != 0)
-							cv::resize(BGimg, BGimg, cv::Size(BGimg.cols - BGimg.cols % 8, BGimg.rows), 0, 0, CV_INTER_NN);
+						//if (BGimg.cols % 8 != 0)
+						//	cv::resize(BGimg, BGimg, cv::Size(BGimg.cols - BGimg.cols % 8, BGimg.rows), 0, 0, CV_INTER_NN);
+						
+						
 						RedrawWindow();
 						DisplayOutput(IDC_Back, BGimg);
-						DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+						if (mode == 0)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+						if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+
 						j = BGimg.cols;
 					}
 				}
@@ -1347,9 +1353,14 @@ void CDlgTab2::seamEnergyDown()
 							else downEv.insert(downEv.begin() + (BGimg.cols * q) - 1, 0);
 						}
 						//BGimg.copyTo(originBGimg);
+						
+						
 						RedrawWindow();
 						DisplayOutput(IDC_Back, BGimg);
-						DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+						if (mode == 0)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+						if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+						
+						
 						j = BGimg.cols;
 					}
 				}
@@ -1361,9 +1372,13 @@ void CDlgTab2::seamEnergyDown()
 		BGimg = BGimg(cutRect);
 		if (BGimg.cols % 8 != 0)
 			cv::resize(BGimg, BGimg, cv::Size(BGimg.cols - BGimg.cols % 8, BGimg.rows), 0, 0, CV_INTER_NN);
-		RedrawWindow();
-		DisplayOutput(IDC_Back, BGimg);
-		DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+		
+		
+			RedrawWindow();
+			DisplayOutput(IDC_Back, BGimg);
+			if (mode == 0)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+			if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+		
 
 
 	}

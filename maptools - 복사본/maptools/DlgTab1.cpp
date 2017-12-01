@@ -198,7 +198,7 @@ void CDlgTab1::DisplayImage(int IDC_PICTURE_TARGET, Mat targetMat)
 	cutGrab = targetMat(firstRect);
 	cv::imwrite("output.png", cutGrab);
 	//cv::imwrite("output.png", targetMat);
-
+	delete targetIplImage;
 }
 
 

@@ -275,7 +275,8 @@ BEGIN
     CONTROL         "",IDC_SLIDER3,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,940,137,100,15
     CONTROL         "",IDC_Paste,"Static",SS_BLACKFRAME,665,14,271,436
     PUSHBUTTON      "배경 불러오기",IDC_CallBGD,945,18,64,14
-    PUSHBUTTON      "삭제부분선택",IDC_SeamDelete,947,36,62,16
+    PUSHBUTTON      "영역선택",IDC_SeamDelete,947,36,62,16
+    CONTROL         "색감 자동조정",IDC_AutoColorBtn,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,950,66,66,10
 END
 
 
