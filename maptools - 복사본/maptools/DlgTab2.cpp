@@ -1383,13 +1383,13 @@ void CDlgTab2::seamEnergyDown(int mode)
 					{
 						cutCount++;
 						
-						/*if (BGimg.cols % 8 != 0)
+						if (BGimg.cols % 8 != 0)
 						{
 							cv::Mat tmpBG(BGimg.size(), CV_8UC3, cv::Scalar(128, 128, 128, 0));
 							copyMakeBorder(BGimg, tmpBG, 0, 0, 0, 8 - BGimg.cols % 8, BORDER_CONSTANT);
 							DisplayOutput(IDC_Back, tmpBG);
 						}
-						else DisplayOutput(IDC_Back, BGimg);*/
+						else DisplayOutput(IDC_Back, BGimg);
 						seamcarving(j, 2, cutCount);
 
 					/*	for (int q = 1; q <= BGimg.rows; q++)
