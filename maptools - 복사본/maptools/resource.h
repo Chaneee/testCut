@@ -45,6 +45,8 @@
 #define IDC_Paste                       1015
 #define IDC_CallBGD                     1016
 #define IDC_SeamDelete                  1020
+#define IDC_AutoColorBtn                1021
+#define IDC_SeamProtect                 1023
 
 // Next default values for new objects
 // 
@@ -52,7 +54,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        317
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1021
+#define _APS_NEXT_CONTROL_VALUE         1024
 #define _APS_NEXT_SYMED_VALUE           311
 #endif
 #endif

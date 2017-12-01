@@ -270,13 +270,14 @@ STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     CONTROL         "",IDC_Back,"Static",SS_BLACKFRAME,21,15,638,436
-    CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,940,85,100,15
-    CONTROL         "",IDC_SLIDER2,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,940,111,100,15
-    CONTROL         "",IDC_SLIDER3,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,940,137,100,15
+    CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,941,243,100,15
+    CONTROL         "",IDC_SLIDER2,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,941,269,100,15
+    CONTROL         "",IDC_SLIDER3,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,941,295,100,15
     CONTROL         "",IDC_Paste,"Static",SS_BLACKFRAME,665,14,271,436
     PUSHBUTTON      "배경 불러오기",IDC_CallBGD,945,18,64,14
-    PUSHBUTTON      "영역선택",IDC_SeamDelete,947,36,62,16
-    CONTROL         "색감 자동조정",IDC_AutoColorBtn,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,950,66,66,10
+    PUSHBUTTON      "삭제 영역선택",IDC_SeamDelete,945,76,62,16
+    CONTROL         "색감 자동조정",IDC_AutoColorBtn,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,947,130,66,10
+    PUSHBUTTON      "보존 영역선택",IDC_SeamProtect,945,102,62,17
 END
 
 

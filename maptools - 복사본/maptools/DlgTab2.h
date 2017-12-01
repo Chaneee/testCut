@@ -54,4 +54,6 @@ public:
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnBnClickedSeamdelete();
+	afx_msg void OnBnClickedAutocolorbtn();
+	afx_msg void OnBnClickedSeamprotect();
 };

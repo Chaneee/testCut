@@ -43,6 +43,7 @@ vector<int> rowSeam;
 vector<int> downEv;
 vector<int> tempEv, originEv;
 bool isSeamDel = false;//심카빙삭제버튼 클릭
+bool isSeamProtect = false;//심카빙보존버튼 클릭
 CPoint delStartP, delEndP;
 bool isObjresize = false;
 ///////////////////////////////
@@ -85,6 +86,7 @@ BEGIN_MESSAGE_MAP(CDlgTab2, CDialog)
 	ON_WM_RBUTTONUP()
 	ON_BN_CLICKED(IDC_SeamDelete, &CDlgTab2::OnBnClickedSeamdelete)
 	ON_BN_CLICKED(IDC_AutoColorBtn, &CDlgTab2::OnBnClickedAutocolorbtn)
+	ON_BN_CLICKED(IDC_SeamProtect, &CDlgTab2::OnBnClickedSeamprotect)
 END_MESSAGE_MAP()
 
 //이미지 디스플레이를 위한 함수 : 배경
@@ -95,7 +97,7 @@ void CDlgTab2::DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat)
 	if (targetMat.rows > 700)
 		cv::resize(targetMat, targetMat, cv::Size(targetMat.cols * 700 / targetMat.rows, 700), 0, 0, CV_INTER_NN);
 
-	if (BGimg.cols % 8 != 0)
+	if (targetMat.cols % 8 != 0)
 		cv::resize(targetMat, targetMat, cv::Size(targetMat.cols - targetMat.cols % 8, targetMat.rows), 0, 0, CV_INTER_NN);
 
 	IplImage* targetIplImage = new IplImage(targetMat);
@@ -177,6 +179,7 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 			LDpoint = LUpoint + CPoint(0, targetMat.rows);
 			RDpoint = LUpoint + CPoint(targetMat.cols, targetMat.rows);
 		}
+
 
 		BITMAPINFO bitmapInfo;
 		memset(&bitmapInfo, 0, sizeof(bitmapInfo));
@@ -511,7 +514,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 
 
 			if (originMat.at<Vec3b>(j, i)[0] == 4 && originMat.at<Vec3b>(j, i)[1] == 8 && originMat.at<Vec3b>(j, i)[2] == 6)
-				saveImg.at<Vec3b>(j, i) = BGMat.at<Vec3b>(j + target_Y, i + target_X);
+				saveImg.at<Vec3b>(j, i) = BGimg.at<Vec3b>(j + target_Y, i + target_X);
 		}
 	}
 /*	objAvr[0] /= clusterMemberCount;
@@ -660,7 +663,7 @@ int CDlgTab2::seamcarving(int startPoint, int mode, int cutCount)
 			{
 				if (c == BGimg.cols - cutCount - 1)
 				{
-					BGimg.at<Vec3b>(y - 1, c) = BGimg.at<Vec3b>(y - 1, c);
+					BGimg.at<Vec3b>(y - 1, c) = 0;
 					///////if (y != 1)	downEv.erase(downEv.begin() + (y - 1) * BGimg.cols - cutCount);
 				}
 
@@ -879,6 +882,7 @@ void CDlgTab2::OnLButtonUp(UINT nFlags, CPoint point)
 		RedrawWindow();
 		DisplayPasteGrabcut(IDC_Back, saveImg, 2);
 		if (isObjresize) seamEnergyDown(1);
+
 	}
 
 	CDialog::OnLButtonUp(nFlags, point);
@@ -1016,7 +1020,7 @@ void CDlgTab2::OnMouseMove(UINT nFlags, CPoint point)
 		DisplayPasteGrabcut(IDC_Back, saveImg, 3);
 	}
 
-	if (isSeamDel && isRbtnClick) {
+	if ((isSeamDel && isRbtnClick) || (isSeamProtect && isRbtnClick)) {
 		//mouse_event(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE, nowMousePos.x * 65535 / 1920, nowMousePos.y * 65535 / 1080, 0, 0);
 		CRect grabRect;
 		CClientDC dc(this);
@@ -1188,7 +1192,7 @@ void CDlgTab2::OnRButtonDown(UINT nFlags, CPoint point)
 	if (!GrabCutImg.data)
 		return;
 
-	if (isSeamDel)	delStartP = point;
+	if (isSeamDel || isSeamProtect)	delStartP = point;
 
 	CPoint revisionPoint = RevisionPoint(point, IDC_BACK_PIVOT);
 
@@ -1256,6 +1260,29 @@ void CDlgTab2::OnRButtonUp(UINT nFlags, CPoint point)
 		isSeamDel = false;
 	}
 
+	//심카빙 보존
+	if (isSeamProtect) {
+		delEndP = point;
+		delEndP.y = BGimg.rows + 24;
+		CRect grabRect;
+		grabRect.SetRect(delStartP.x, delStartP.y, delEndP.x, delEndP.y);
+
+		CClientDC dc(this);
+		CPen pen;
+		pen.CreatePen(PS_DASH, 2, RGB(125, 230, 125));    // 펜을 생성
+		CPen* oldPen = dc.SelectObject(&pen);
+		CBrush brush;
+		brush.CreateStockObject(NULL_BRUSH);    // 투명 브러시
+		CBrush* pOldBrush = dc.SelectObject(&brush);
+		dc.Rectangle(grabRect);
+		dc.SelectObject(pOldBrush);
+		//inputImg.at<uchar>(point.x, point.y) = GC_BGD;
+		if (!isObjresize)	seamEnergyDown(3);//에너지 높이기
+		isObjresize = true;
+		isSeamProtect = false;
+
+	}
+
 	CDialog::OnRButtonUp(nFlags, point);
 }
 
@@ -1263,6 +1290,7 @@ void CDlgTab2::OnRButtonUp(UINT nFlags, CPoint point)
 //배경에서 심카빙으로 삭제 버튼
 void CDlgTab2::OnBnClickedSeamdelete()
 {
+	isObjresize = false;
 	isSeamDel = true;
 }
 
@@ -1270,12 +1298,24 @@ void CDlgTab2::seamEnergyDown(int mode)
 {
 	int rectRows = delEndP.y - delStartP.y;
 	int rectCols = delEndP.x - delStartP.x;
-
-	for (int y = delStartP.y - 24; y < delEndP.y - 24; y++)
+	if (mode != 3)
 	{
-		for (int x = delStartP.x - 32; x < delEndP.x - 32; x++)
+		for (int y = delStartP.y - 24; y < delEndP.y - 24; y++)
 		{
-			downEv[y*BGimg.cols + x] = -100;
+			for (int x = delStartP.x - 32; x < delEndP.x - 32; x++)
+			{
+				downEv[y*BGimg.cols + x] -= 100;
+			}
+		}
+	}
+	else if (mode == 3)
+	{
+		for (int y = delStartP.y - 24; y < delEndP.y - 24; y++)
+		{
+			for (int x = delStartP.x - 32; x < delEndP.x - 32; x++)
+			{
+				downEv[y*BGimg.cols + x] += 100;
+			}
 		}
 	}
 
@@ -1313,7 +1353,7 @@ void CDlgTab2::seamEnergyDown(int mode)
 						
 						RedrawWindow();
 						DisplayOutput(IDC_Back, BGimg);
-						if (mode == 0)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+						if (mode == 0 || mode == 3)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
 						if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
 
 						j = BGimg.cols;
@@ -1362,7 +1402,7 @@ void CDlgTab2::seamEnergyDown(int mode)
 						
 						RedrawWindow();
 						DisplayOutput(IDC_Back, BGimg);
-						if (mode == 0)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+						if (mode == 0 || mode == 3)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
 						if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
 						
 						
@@ -1381,7 +1421,7 @@ void CDlgTab2::seamEnergyDown(int mode)
 		
 			RedrawWindow();
 			DisplayOutput(IDC_Back, BGimg);
-			if (mode == 0)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
+			if (mode == 0 || mode == 3)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
 			if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
 		
 
@@ -1400,4 +1440,11 @@ void CDlgTab2::OnBnClickedAutocolorbtn()
 {
 	isAutoColor = isAutoColor == true ? false : true;
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+
+void CDlgTab2::OnBnClickedSeamprotect()
+{
+	isObjresize = false;
+	isSeamProtect = true;
 }
