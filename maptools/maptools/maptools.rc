@@ -278,6 +278,7 @@ BEGIN
     PUSHBUTTON      "삭제 영역선택",IDC_SeamDelete,945,76,62,16
     CONTROL         "색감 자동조정",IDC_AutoColorBtn,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,947,130,66,10
     PUSHBUTTON      "보존 영역선택",IDC_SeamProtect,945,102,62,17
+    PUSHBUTTON      "저장하기",IDC_SAVEBUTTON,947,436,50,14
 END
 
 

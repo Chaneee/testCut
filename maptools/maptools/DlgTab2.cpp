@@ -88,6 +88,7 @@ BEGIN_MESSAGE_MAP(CDlgTab2, CDialog)
 	ON_BN_CLICKED(IDC_SeamDelete, &CDlgTab2::OnBnClickedSeamdelete)
 	ON_BN_CLICKED(IDC_AutoColorBtn, &CDlgTab2::OnBnClickedAutocolorbtn)
 	ON_BN_CLICKED(IDC_SeamProtect, &CDlgTab2::OnBnClickedSeamprotect)
+	ON_BN_CLICKED(IDC_SAVEBUTTON, &CDlgTab2::OnBnClickedSavebutton)
 END_MESSAGE_MAP()
 
 //이미지 디스플레이를 위한 함수 : 배경
@@ -291,7 +292,7 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 		{
 
 			CBrush brush;
-			brush.CreateSolidBrush(RGB(255, 128, 0));     // 오렌지색 채움색을 생성
+			brush.CreateSolidBrush(RGB(255, 230, 110));     // 채움색 생성
 			CBrush* oldBrush = dcImageTraget.SelectObject(&brush);
 			dcImageTraget.Rectangle(LUpoint.x, LUpoint.y, LUpoint.x + 10, LUpoint.y + 10);
 			dcImageTraget.Rectangle(RUpoint.x, RUpoint.y, RUpoint.x - 10, RUpoint.y + 10);
@@ -510,7 +511,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 		{
 			int secretCount = 0;
 			//외관선 부드럽게
-			if (canny.data && canny.at<uchar>(j, i) != 0)
+		/*	if (canny.data && canny.at<uchar>(j, i) != 0)
 			{
 			float aa = sqrt(pow(saveImg.cols / 2 - i, 2));
 			dist = (sqrt(pow(saveImg.cols / 2 - i, 2)) / (saveImg.cols / 2)) + (sqrt(pow(saveImg.rows / 2 - j, 2)) / (saveImg.rows / 2));
@@ -524,7 +525,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 				originMat.at<Vec3b>(j, i)[1] = (BGMat.at<Vec3b>(j + target_Y, i + target_X)[1] * bgRatio) + (originMat.at<Vec3b>(j, i)[1] * objectRatio);
 				originMat.at<Vec3b>(j, i)[2] = (BGMat.at<Vec3b>(j + target_Y, i + target_X)[2] * bgRatio) + (originMat.at<Vec3b>(j, i)[2] * objectRatio);
 			}
-			}
+			}*/
 
 
 			if (originMat.at<Vec3b>(j, i)[0] == 4 && originMat.at<Vec3b>(j, i)[1] == 8 && originMat.at<Vec3b>(j, i)[2] == 6)
@@ -545,16 +546,6 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 			}
 		}
 	}
-/*	objAvr[0] /= clusterMemberCount;
-	objAvr[1] /= clusterMemberCount;
-	objAvr[2] /= clusterMemberCount;
-
-	bgAvr[0] /= clusterMemberCount;
-	bgAvr[1] /= clusterMemberCount;
-	bgAvr[2] /= clusterMemberCount;*/
-	////////////////
-
-
 }
 
 //심카빙을 위한 에너지 계산
@@ -838,48 +829,50 @@ void CDlgTab2::OnLButtonDown(UINT nFlags, CPoint point)
 		return;
 
 	CPoint revisionPoint = RevisionPoint(point, IDC_BACK_PIVOT);
-
-	if (revisionPoint.x > LUpoint.x && revisionPoint.x < LUpoint.x + 10 && revisionPoint.y > LUpoint.y && revisionPoint.y < LUpoint.y + 10)
+	if (revisionPoint.x > LUpoint.x && revisionPoint.y > LUpoint.y && revisionPoint.x < RDpoint.x && revisionPoint.y < RDpoint.y)
 	{
-		if (!GrabCutImg.data)
-			return;
+		if (revisionPoint.x > LUpoint.x && revisionPoint.x < LUpoint.x + 10 && revisionPoint.y > LUpoint.y && revisionPoint.y < LUpoint.y + 10)
+		{
+			if (!GrabCutImg.data)
+				return;
 
-		isResizeClick = true;
-		clickPointIdx = 1;
-	}
-	else if (revisionPoint.x > RUpoint.x - 10 && revisionPoint.x < RUpoint.x && revisionPoint.y > RUpoint.y && revisionPoint.y < RUpoint.y + 10)
-	{
-		if (!GrabCutImg.data)
-			return;
+			isResizeClick = true;
+			clickPointIdx = 1;
+		}
+		else if (revisionPoint.x > RUpoint.x - 10 && revisionPoint.x < RUpoint.x && revisionPoint.y > RUpoint.y && revisionPoint.y < RUpoint.y + 10)
+		{
+			if (!GrabCutImg.data)
+				return;
 
-		isResizeClick = true;
-		clickPointIdx = 2;
-	}
-	else if (revisionPoint.x > LDpoint.x && revisionPoint.x < LDpoint.x + 10 && revisionPoint.y > LDpoint.y - 10 && revisionPoint.y < LDpoint.y)
-	{
-		if (!GrabCutImg.data)
-			return;
+			isResizeClick = true;
+			clickPointIdx = 2;
+		}
+		else if (revisionPoint.x > LDpoint.x && revisionPoint.x < LDpoint.x + 10 && revisionPoint.y > LDpoint.y - 10 && revisionPoint.y < LDpoint.y)
+		{
+			if (!GrabCutImg.data)
+				return;
 
-		isResizeClick = true;
-		clickPointIdx = 3;
-	}
-	else if (revisionPoint.x > RDpoint.x - 10 && revisionPoint.x < RDpoint.x && revisionPoint.y > RDpoint.y - 10 && revisionPoint.y < RDpoint.y)
-	{
-		if (!GrabCutImg.data)
-			return;
+			isResizeClick = true;
+			clickPointIdx = 3;
+		}
+		else if (revisionPoint.x > RDpoint.x - 10 && revisionPoint.x < RDpoint.x && revisionPoint.y > RDpoint.y - 10 && revisionPoint.y < RDpoint.y)
+		{
+			if (!GrabCutImg.data)
+				return;
 
-		isResizeClick = true;
-		clickPointIdx = 4;
-	}
-	//꼭지점 제외구간 클릭하면 이동 
-	else /*((point.x <= imgCenterPoint.x + 50 && point.x >= imgCenterPoint.x - 50)
-		&& (point.y <= imgCenterPoint.y + 50 && point.y >= imgCenterPoint.y - 50) && !isResizeClick)*/
-	{
-		distPoint2Center.x = sqrt(pow(point.x - imgCenterPoint.x, 2));
-		distPoint2Center.y = sqrt(pow(point.y - imgCenterPoint.y, 2));
-		isTransportClick = true;
-		imgCenterPoint = point;
-		DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+			isResizeClick = true;
+			clickPointIdx = 4;
+		}
+		//꼭지점 제외구간 클릭하면 이동 
+		else /*((point.x <= imgCenterPoint.x + 50 && point.x >= imgCenterPoint.x - 50)
+			&& (point.y <= imgCenterPoint.y + 50 && point.y >= imgCenterPoint.y - 50) && !isResizeClick)*/
+		{
+			distPoint2Center.x = sqrt(pow(point.x - imgCenterPoint.x, 2));
+			distPoint2Center.y = sqrt(pow(point.y - imgCenterPoint.y, 2));
+			isTransportClick = true;
+			imgCenterPoint = point;
+			DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+		}
 	}
 	CDialog::OnLButtonDown(nFlags, point);
 }
@@ -1455,18 +1448,20 @@ void CDlgTab2::seamEnergyDown(int mode)
 		BGimg = BGimg(cutRect);
 		if (BGimg.cols % 8 != 0)
 			cv::resize(BGimg, BGimg, cv::Size(BGimg.cols - BGimg.cols % 8, BGimg.rows), 0, 0, CV_INTER_NN);
-		
-		
-			RedrawWindow();
-			DisplayOutput(IDC_Back, BGimg);
-			if (mode == 0 || mode == 3)	DisplayPasteGrabcut(IDC_Paste, GrabCutImg, 0);
-			if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
-		
-
-
 	}
-
 	else return;
+	RedrawWindow();
+	DisplayOutput(IDC_Back, BGimg);
+	if (mode == 0 || mode == 3)	//영역설정 끝나면 영역으로 이미지 자동배치
+	{
+		imgCenterPoint.x = delEndP.x - saveImg.cols / 2;
+		imgCenterPoint.y = delEndP.y - saveImg.rows / 2;
+		LUpoint = imgCenterPoint - IDC_BACK_PIVOT - CPoint(saveImg.cols/2, saveImg.rows/2);
+		Compose(BGimg, saveImg, LUpoint.x, LUpoint.y, 1);
+		DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+	}
+	else if (mode == 1)	DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+
 }
 
 CPoint CDlgTab2::RevisionPoint(CPoint point, CPoint pivot)
@@ -1485,4 +1480,28 @@ void CDlgTab2::OnBnClickedSeamprotect()
 {
 	isObjresize = false;
 	isSeamProtect = true;
+}
+
+
+void CDlgTab2::OnBnClickedSavebutton()
+{
+	for (int i = 0;i < saveImg.cols;i++)
+	{
+		for (int j = 0;j < saveImg.rows;j++)
+		{
+			BGimg.at<Vec3b>(j + LUpoint.y, i + LUpoint.x)[0] = saveImg.at<Vec3b>(j, i)[0];
+			BGimg.at<Vec3b>(j + LUpoint.y, i + LUpoint.x)[1] = saveImg.at<Vec3b>(j, i)[1];
+			BGimg.at<Vec3b>(j + LUpoint.y, i + LUpoint.x)[2] = saveImg.at<Vec3b>(j, i)[2];
+		}
+	}
+	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, NULL, AfxGetMainWnd());
+	if (dlg.DoModal() == IDOK)
+	{
+		CString cstrImgPath = dlg.GetPathName();
+		CT2CA pszConvertedAnsiString(cstrImgPath);
+		std::string cstrImgPathString(pszConvertedAnsiString);
+		//m_Img.Load(openFilter);
+
+		cv::imwrite(string(cstrImgPathString)+".jpg", BGimg);
+	}
 }

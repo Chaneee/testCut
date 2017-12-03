@@ -56,4 +56,5 @@ public:
 	afx_msg void OnBnClickedSeamdelete();
 	afx_msg void OnBnClickedAutocolorbtn();
 	afx_msg void OnBnClickedSeamprotect();
+	afx_msg void OnBnClickedSavebutton();
 };
