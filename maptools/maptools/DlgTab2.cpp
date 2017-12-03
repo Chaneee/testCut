@@ -499,6 +499,11 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 					float Cr = (bgSd[2] * 3) / objSd[2] * ((*buf)[2] - objAvr[2]) + bgAvr[2];
 
 					objBGR.at<cv::Vec3d>(j, i) = YCbCrtoRGB(cv::Vec3d(Y, Cb, Cr));
+					if (originMat.at<Vec3b>(j, i)[0] == 0 || originMat.at<Vec3b>(j, i)[1] == 0 || originMat.at<Vec3b>(j, i)[2] == 0)
+					{
+						objBGR.at<cv::Vec3d>(j, i) = YCbCrtoRGB(cv::Vec3d(0, 0, 0));
+					}
+					//objBGR.at<cv::Vec3d>(j, i) = YCbCrtoRGB(cv::Vec3d(0, 0, 0));
 				}
 			}
 		}

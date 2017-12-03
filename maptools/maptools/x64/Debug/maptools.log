@@ -12,9 +12,9 @@ c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(322): warning C4305: '�
 c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(497): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(498): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(499): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(572): warning C4244: '+=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(805): warning C4101: 'nPos' :참조되지 않은 지역 변수입니다.
-c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(870): warning C4244: '=': 'double'에서 'LONG'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(871): warning C4244: '=': 'double'에서 'LONG'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(577): warning C4244: '+=': 'double'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(810): warning C4101: 'nPos' :참조되지 않은 지역 변수입니다.
+c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(875): warning C4244: '=': 'double'에서 'LONG'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+c:\users\chan\desktop\test\maptools\maptools\dlgtab2.cpp(876): warning C4244: '=': 'double'에서 'LONG'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   maptools.vcxproj -> C:\Users\Chan\Desktop\test\maptools\x64\Debug\maptools.exe
   maptools.vcxproj -> C:\Users\Chan\Desktop\test\maptools\x64\Debug\maptools.pdb (Partial PDB)
