@@ -38,6 +38,11 @@ bool isRbtnClick = false;
 bool isAutoColor = false;
 bool isBgCalled = false;
 
+//new
+float rotateAngle = 0, oldRotateAngle = 0, mouseAngle = 0, pivotAngle = 0;
+float luX, luY, ruX, ruY, ldX, ldY, rdX, rdY;
+int minY, minX, maxY, maxX;
+
 //심카빙을 위한 변수
 vector<int> xEnergyVector, yEnergyVector;
 vector<int> rowSeam;
@@ -182,7 +187,6 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 			RDpoint = LUpoint + CPoint(targetMat.cols, targetMat.rows);
 		}
 
-
 		BITMAPINFO bitmapInfo;
 		memset(&bitmapInfo, 0, sizeof(bitmapInfo));
 		bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -234,71 +238,32 @@ void CDlgTab2::DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMat, int mo
 		{
 			DisplayOutput(IDC_Back, BGimg);
 
-			//CDC sourceDC, destDC;
-			//sourceDC.CreateCompatibleDC(NULL);
-			//destDC.CreateCompatibleDC(NULL);
-			//float cosine = (float)cos(45);
-			//float sine = (float)sin(45);
-			//int x1 = (int)(targetMat.rows * sine);
-			//int y1 = (int)(targetMat.rows * cosine);
-			//int x2 = (int)(targetMat.cols * cosine + targetMat.rows * sine);
-			//int y2 = (int)(targetMat.rows * cosine - targetMat.cols * sine);
-			//int x3 = (int)(targetMat.cols * cosine);
-			//int y3 = (int)(-targetMat.cols * sine);
-			//int minx = min(0, min(x1, min(x2, x3)));
-			//int miny = min(0, min(y1, min(y2, y3)));
-			//int maxx = max(0, max(x1, max(x2, x3)));
-			//int maxy = max(0, max(y1, max(y2, y3)));
-
-			//int w = maxx - minx;
-			//int h = maxy - miny;
-			//HBITMAP hbmResult = ::CreateCompatibleBitmap(CClientDC(NULL), w, h);
-
-			//HBITMAP hbmOldSource = (HBITMAP)::SelectObject(sourceDC.m_hDC, );
-			//HBITMAP hbmOldDest = (HBITMAP)::SelectObject(destDC.m_hDC, hbmResult);
-
-			//// Draw the background color before we change mapping mode
-			//HBRUSH hbrBack = CreateSolidBrush(RGB(255,0,0));
-			//HBRUSH hbrOld = (HBRUSH)::SelectObject(destDC.m_hDC, hbrBack);
-			//destDC.PatBlt(0, 0, w, h, PATCOPY);
-			//::DeleteObject(::SelectObject(destDC.m_hDC, hbrOld));
-
-			//// We will use world transform to rotate the bitmap
-			//SetGraphicsMode(destDC.m_hDC, GM_ADVANCED);
-			//XFORM xform;
-			//xform.eM11 = cosine;
-			//xform.eM12 = -sine;
-			//xform.eM21 = sine;
-			//xform.eM22 = cosine;
-			//xform.eDx = (float)-minx;
-			//xform.eDy = (float)-miny;
-
-			//SetWorldTransform(destDC.m_hDC, &xform);
-
-			//// Now do the actual rotating - a pixel at a time
-			//destDC.BitBlt(0, 0, bm.bmWidth, bm.bmHeight, &sourceDC, 0, 0, SRCCOPY);
-
-			//// Restore DCs
-			//::SelectObject(sourceDC.m_hDC, hbmOldSource);
-			//::SelectObject(destDC.m_hDC, hbmOldDest);
-
 			::StretchDIBits(dcImageTraget.GetSafeHdc(), LUpoint.x, LUpoint.y, targetMat.cols, targetMat.rows,
 				0, 0, tempImage->width, tempImage->height, tempImage->imageData, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
-			//::TransparentBlt(dcImageTraget.GetSafeHdc(), rcImageTarget.left, rcImageTarget.right, rcImageTarget.top, rcImageTarget.right, dcImageTraget.GetSafeHdc(), 0, 0, bitmapInfo.bmiHeader.biWidth, bitmapInfo.bmiHeader.biHeight, RGB(0, 0, 0));
 			cvReleaseImage(&tempImage);
 		}
 
 		else if (mode == 4) //마우스오버
 		{
+			float distance = sqrt(pow(LUpoint.x - imgCenterPoint.x, 2) + pow(LUpoint.y - imgCenterPoint.y, 2));
 
 			CBrush brush;
 			brush.CreateSolidBrush(RGB(255, 230, 110));     // 채움색 생성
 			CBrush* oldBrush = dcImageTraget.SelectObject(&brush);
-			dcImageTraget.Rectangle(LUpoint.x, LUpoint.y, LUpoint.x + 10, LUpoint.y + 10);
-			dcImageTraget.Rectangle(RUpoint.x, RUpoint.y, RUpoint.x - 10, RUpoint.y + 10);
-			dcImageTraget.Rectangle(LDpoint.x, LDpoint.y, LDpoint.x + 10, LDpoint.y - 10);
-			dcImageTraget.Rectangle(RDpoint.x, RDpoint.y, RDpoint.x - 10, RDpoint.y - 10);
-		
+
+			luX = (-targetMat.cols / 2) * cos(-rotateAngle * 3.141592 / 180) - (-targetMat.rows / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.x - IDC_BACK_PIVOT.x,
+			luY = (-targetMat.rows / 2) * cos(-rotateAngle * 3.141592 / 180) + (-targetMat.cols / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.y - IDC_BACK_PIVOT.y,
+			ruX = (targetMat.cols / 2) * cos(-rotateAngle * 3.141592 / 180) - (-targetMat.rows / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.x - IDC_BACK_PIVOT.x,
+			ruY = (-targetMat.rows / 2) * cos(-rotateAngle * 3.141592 / 180) + (targetMat.cols / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.y - IDC_BACK_PIVOT.y,
+			ldX = (-targetMat.cols / 2) * cos(-rotateAngle * 3.141592 / 180) - (targetMat.rows / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.x - IDC_BACK_PIVOT.x,
+			ldY = (targetMat.rows / 2) * cos(-rotateAngle * 3.141592 / 180) + (-targetMat.cols / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.y - IDC_BACK_PIVOT.y,
+			rdX = (targetMat.cols / 2) * cos(-rotateAngle * 3.141592 / 180) - (targetMat.rows / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.x - IDC_BACK_PIVOT.x,
+			rdY = (targetMat.rows / 2) * cos(-rotateAngle * 3.141592 / 180) + (targetMat.cols / 2) * sin(-rotateAngle * 3.141592 / 180) + imgCenterPoint.y - IDC_BACK_PIVOT.y;
+
+			dcImageTraget.Rectangle(luX - 5, luY - 5, luX + 5, luY + 5);
+			dcImageTraget.Rectangle(ruX - 5, ruY - 5, ruX + 5, ruY + 5);
+			dcImageTraget.Rectangle(ldX - 5, ldY - 5, ldX + 5, ldY + 5);
+			dcImageTraget.Rectangle(rdX - 5, rdY - 5, rdX + 5, rdY + 5);
 		}
 		//if (isLeftMouseDown)
 		//	dcImageTraget.StretchBlt(0, 0, GrabCutImg.cols-100, GrabCutImg.rows-100, &dcImageTraget, 0, 0, GrabCutImg.cols, GrabCutImg.rows,SRCCOPY);
@@ -425,7 +390,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 
 		for (int j = 0;j < originMat.rows;j++)
 		{
-			if (originMat.at<Vec3b>(j, i)[0] != 4 || originMat.at<Vec3b>(j, i)[1] != 8 || originMat.at<Vec3b>(j, i)[2] != 6)
+			if (originMat.at<Vec3b>(j, i)[0] != 0 || originMat.at<Vec3b>(j, i)[1] != 0 || originMat.at<Vec3b>(j, i)[2] != 0)
 			{
 				cv::Vec3d* objBuf = &objYCbCr.at<cv::Vec3d>(j, i);
 				objAvr[0] += (*objBuf)[0];
@@ -458,7 +423,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 
 		for (int j = 0;j < originMat.rows;j++)
 		{
-			if (originMat.at<Vec3b>(j, i)[0] != 4 || originMat.at<Vec3b>(j, i)[1] != 8 || originMat.at<Vec3b>(j, i)[2] != 6)
+			if (originMat.at<Vec3b>(j, i)[0] != 0 || originMat.at<Vec3b>(j, i)[1] != 0 || originMat.at<Vec3b>(j, i)[2] != 0)
 			{
 				cv::Vec3d* objBuf = &objYCbCr.at<cv::Vec3d>(j, i);
 				objSd[0] += pow(((*objBuf)[0] - objAvr[0]), 2);
@@ -491,7 +456,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 
 			for (int j = 0;j < originMat.rows;j++)
 			{
-				if (originMat.at<Vec3b>(j, i)[0] != 4 || originMat.at<Vec3b>(j, i)[1] != 8 || originMat.at<Vec3b>(j, i)[2] != 6)
+				if (originMat.at<Vec3b>(j, i)[0] != 0 || originMat.at<Vec3b>(j, i)[1] != 0 || originMat.at<Vec3b>(j, i)[2] != 0)
 				{
 					cv::Vec3d* buf = &objYCbCr.at<cv::Vec3d>(j, i);
 					float Y = (bgSd[0] * 3) / objSd[0] * ((*buf)[0] - objAvr[0]) + bgAvr[0];
@@ -499,11 +464,6 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 					float Cr = (bgSd[2] * 3) / objSd[2] * ((*buf)[2] - objAvr[2]) + bgAvr[2];
 
 					objBGR.at<cv::Vec3d>(j, i) = YCbCrtoRGB(cv::Vec3d(Y, Cb, Cr));
-					if (originMat.at<Vec3b>(j, i)[0] == 0 || originMat.at<Vec3b>(j, i)[1] == 0 || originMat.at<Vec3b>(j, i)[2] == 0)
-					{
-						objBGR.at<cv::Vec3d>(j, i) = YCbCrtoRGB(cv::Vec3d(0, 0, 0));
-					}
-					//objBGR.at<cv::Vec3d>(j, i) = YCbCrtoRGB(cv::Vec3d(0, 0, 0));
 				}
 			}
 		}
@@ -533,7 +493,7 @@ void CDlgTab2::Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int
 			}*/
 
 
-			if (originMat.at<Vec3b>(j, i)[0] == 4 && originMat.at<Vec3b>(j, i)[1] == 8 && originMat.at<Vec3b>(j, i)[2] == 6)
+			if (originMat.at<Vec3b>(j, i)[0] == 0 && originMat.at<Vec3b>(j, i)[1] == 0 && originMat.at<Vec3b>(j, i)[2] == 0)
 			{
 				if (j + target_Y >= BGMat.rows || i + target_X >= BGMat.cols || j + target_Y < 0 || i + target_X < 0)
 				{//배경 밖을 나가면 회색으로 덮음
@@ -760,23 +720,93 @@ void CDlgTab2::OnPaint()
 	{
 		originGrab = imread("originInput.png", CV_LOAD_IMAGE_UNCHANGED);
 		GrabCutImg = imread("output.png", CV_LOAD_IMAGE_UNCHANGED);
+
+		//배경구분 초기화
+		for (int i = 0;i < GrabCutImg.cols;i++)
+		{
+			for (int j = 0;j < GrabCutImg.rows;j++)
+			{
+				if (GrabCutImg.at<Vec3b>(j, i) == cv::Vec3b(0, 0, 0))
+				{
+					GrabCutImg.at<Vec3b>(j, i) = cv::Vec3b(1, 2, 3);
+					originGrab.at<Vec3b>(j, i) = cv::Vec3b(1, 2, 3);
+				}
+			}
+		}
+
+		//객체 크기 알맞게 조절
+		CPoint LfirstP, DfirstP, RfirstP, UfirstP;
+		for (int i = 0;i < GrabCutImg.cols;i++)
+		{
+			for (int j = 0;j < GrabCutImg.rows;j++)
+			{
+				if (GrabCutImg.at<Vec3b>(j, i) != originGrab.at<Vec3b>(j, i) * 0.2)
+				{
+					LfirstP = CPoint(i, j);
+					i = GrabCutImg.cols;
+					j = GrabCutImg.rows;
+				}
+			}
+		}
+		for (int j = GrabCutImg.rows - 1; j >= 0; j--)
+		{
+			for (int i = 0;i < GrabCutImg.cols; i++)
+			{
+				if (GrabCutImg.at<Vec3b>(j, i) != originGrab.at<Vec3b>(j, i) * 0.2)
+				{
+					DfirstP = CPoint(i, j);
+					i = GrabCutImg.cols;
+					j = -1;
+				}
+			}
+		}
+		for (int i = GrabCutImg.cols - 1; i >= 0; i--)
+		{
+			for (int j = 0;j < GrabCutImg.rows;j++)
+			{
+				if (GrabCutImg.at<Vec3b>(j, i) != originGrab.at<Vec3b>(j, i) * 0.2)
+				{
+					RfirstP = CPoint(i, j);
+					i = -1;
+					j = GrabCutImg.rows;
+				}
+			}
+		}
+		for (int j = 0; j < GrabCutImg.rows; j++)
+		{
+			for (int i = 0;i < GrabCutImg.cols;i++)
+			{
+				if (GrabCutImg.at<Vec3b>(j, i) != originGrab.at<Vec3b>(j, i) * 0.2)
+				{
+					UfirstP = CPoint(i, j);
+					i = GrabCutImg.cols;
+					j = GrabCutImg.rows;
+				}
+			}
+		}
+
+		int dist = distance(int(LfirstP.x), int(UfirstP.y), GrabCutImg.cols / 2, GrabCutImg.rows / 2);
+		int t = dist - GrabCutImg.rows / 2 < 0 ? 0 : dist - GrabCutImg.rows / 2;
+		int b = dist - GrabCutImg.rows / 2 < 0 ? 0 : dist - GrabCutImg.rows / 2;
+		int l = dist - GrabCutImg.cols / 2 < 0 ? 0 : dist - GrabCutImg.cols / 2;
+		int r = dist - GrabCutImg.cols / 2 < 0 ? 0 : dist - GrabCutImg.cols / 2;
+		copyMakeBorder(GrabCutImg, GrabCutImg, t, b, l, r, BORDER_ISOLATED);
+		copyMakeBorder(originGrab, originGrab, t, b, l, r, BORDER_ISOLATED);
+
 		if (GrabCutImg.cols % 8 != 0)
 			cv::resize(GrabCutImg, GrabCutImg, cv::Size(GrabCutImg.cols - GrabCutImg.cols % 8, GrabCutImg.rows), 0, 0, CV_INTER_NN);
 		if (originGrab.cols % 8 != 0)
 			cv::resize(originGrab, originGrab, cv::Size(originGrab.cols - originGrab.cols % 8, originGrab.rows), 0, 0, CV_INTER_NN);
 
+		//객체 구분 초기화
 		for (int i = 0;i < GrabCutImg.cols;i++)
 		{
 			for (int j = 0;j < GrabCutImg.rows;j++)
 			{
 				if (GrabCutImg.at<Vec3b>(j, i) == originGrab.at<Vec3b>(j, i) * 0.2)
 				{
-					GrabCutImg.at<Vec3b>(j, i)[0] = 4;
-					GrabCutImg.at<Vec3b>(j, i)[1] = 8;
-					GrabCutImg.at<Vec3b>(j, i)[2] = 6;
-					originGrab.at<Vec3b>(j, i)[0] = 4;
-					originGrab.at<Vec3b>(j, i)[1] = 8;
-					originGrab.at<Vec3b>(j, i)[2] = 6;
+					GrabCutImg.at<Vec3b>(j, i) = cv::Vec3b(0, 0, 0);
+					originGrab.at<Vec3b>(j, i) = cv::Vec3b(0, 0, 0);
 				}
 			}
 		}
@@ -834,9 +864,9 @@ void CDlgTab2::OnLButtonDown(UINT nFlags, CPoint point)
 		return;
 
 	CPoint revisionPoint = RevisionPoint(point, IDC_BACK_PIVOT);
-	if (revisionPoint.x > LUpoint.x && revisionPoint.y > LUpoint.y && revisionPoint.x < RDpoint.x && revisionPoint.y < RDpoint.y)
+	if (revisionPoint.x > luX - 5 && revisionPoint.y > luY - 5 && revisionPoint.x < rdX + 5 && revisionPoint.y < rdY + 5)
 	{
-		if (revisionPoint.x > LUpoint.x && revisionPoint.x < LUpoint.x + 10 && revisionPoint.y > LUpoint.y && revisionPoint.y < LUpoint.y + 10)
+		if (revisionPoint.x > luX - 5 && revisionPoint.x < luX + 5 && revisionPoint.y > luY - 5 && revisionPoint.y < luY + 5)
 		{
 			if (!GrabCutImg.data)
 				return;
@@ -844,7 +874,7 @@ void CDlgTab2::OnLButtonDown(UINT nFlags, CPoint point)
 			isResizeClick = true;
 			clickPointIdx = 1;
 		}
-		else if (revisionPoint.x > RUpoint.x - 10 && revisionPoint.x < RUpoint.x && revisionPoint.y > RUpoint.y && revisionPoint.y < RUpoint.y + 10)
+		else if (revisionPoint.x > ruX - 5 && revisionPoint.x < ruX + 5 && revisionPoint.y > ruY - 5 && revisionPoint.y < ruY + 5)
 		{
 			if (!GrabCutImg.data)
 				return;
@@ -852,7 +882,7 @@ void CDlgTab2::OnLButtonDown(UINT nFlags, CPoint point)
 			isResizeClick = true;
 			clickPointIdx = 2;
 		}
-		else if (revisionPoint.x > LDpoint.x && revisionPoint.x < LDpoint.x + 10 && revisionPoint.y > LDpoint.y - 10 && revisionPoint.y < LDpoint.y)
+		else if (revisionPoint.x > ldX - 5 && revisionPoint.x < ldX + 5 && revisionPoint.y > ldY - 5 && revisionPoint.y < ldY + 5)
 		{
 			if (!GrabCutImg.data)
 				return;
@@ -860,7 +890,7 @@ void CDlgTab2::OnLButtonDown(UINT nFlags, CPoint point)
 			isResizeClick = true;
 			clickPointIdx = 3;
 		}
-		else if (revisionPoint.x > RDpoint.x - 10 && revisionPoint.x < RDpoint.x && revisionPoint.y > RDpoint.y - 10 && revisionPoint.y < RDpoint.y)
+		else if (revisionPoint.x > rdX - 5 && revisionPoint.x < rdX + 5 && revisionPoint.y > rdY - 5 && revisionPoint.y < rdY + 5)
 		{
 			if (!GrabCutImg.data)
 				return;
@@ -918,26 +948,29 @@ void CDlgTab2::OnLButtonUp(UINT nFlags, CPoint point)
 void CDlgTab2::OnMouseMove(UINT nFlags, CPoint point)
 {
 	CPoint revisionPoint = RevisionPoint(point, IDC_BACK_PIVOT);
+	int xMin = INT16_MAX, xMax = INT16_MIN, yMin = INT16_MAX, yMax = INT16_MIN;
 
-	/*if (revisionPoint.x > LUpoint.x && revisionPoint.x < RUpoint.x && revisionPoint.y > LUpoint.y && revisionPoint.y < LDpoint.y)
+	if (luX == ruX && luY == ldY)
 	{
-		isMouseHover = true;
-		DisplayPasteGrabcut(IDC_Back, saveImg, 1);
+		xMin = LUpoint.x;
+		xMax = RUpoint.x;
+		yMin = LUpoint.y;
+		yMax = LDpoint.y;
 	}
-	else
-	{
-		isMouseHover = false;
-		DisplayPasteGrabcut(IDC_Back, saveImg, 1);
-	}*/
+	//-> 최소/최대값 검출
+	if (xMin > luX) xMin = luX; if (xMin > ruX) xMin = ruX; if (xMin > ldX) xMin = ldX;	if (xMin > rdX) xMin = rdX;
+	if (xMax < luX) xMax = luX; if (xMax < ruX) xMax = ruX; if (xMax < ldX) xMax = ldX;	if (xMax < rdX) xMax = rdX;
+	if (yMin > luY) yMin = luY; if (yMin > ruY) yMin = ruY; if (yMin > ldY) yMin = ldY;	if (yMin > rdY) yMin = rdY;
+	if (yMax < luY) yMax = luY; if (yMax < ruY) yMax = ruY; if (yMax < ldY) yMax = ldY;	if (yMax < rdY) yMax = rdY;
 
 	//마우스오버
-	if (point.x > LUpoint.x+32 && point.y > LUpoint.y+24 && point.x < LUpoint.x + saveImg.cols + 32 && point.y < LUpoint.y + saveImg.rows + 24)
+	if (revisionPoint.x < xMax && revisionPoint.x > xMin && revisionPoint.y < yMax && revisionPoint.y > yMin)
 	{
 		DisplayPasteGrabcut(IDC_Back, saveImg, 4);
 	}
-	else if(isBgCalled)
+	else if (isBgCalled)
 	{
-		DisplayPasteGrabcut(IDC_Back, saveImg, 2);
+		DisplayPasteGrabcut(IDC_Back, saveImg, 1);
 	}
 
 	//이동
@@ -946,102 +979,88 @@ void CDlgTab2::OnMouseMove(UINT nFlags, CPoint point)
 		imgCenterPoint = point;
 		DisplayPasteGrabcut(IDC_Back, saveImg, 1);
 
-		//밖에 나갈때 예외처리
-	/*	if (mouseMovePoint.x - (saveImg.cols / 2) < 0)
-			point = 0;*/
 	}
 
 	//크기조절
 	if (isResizeClick)
 	{
+		CPoint tmpPoint;
 		switch (clickPointIdx)
 		{
 		case 1:
-			scale = cv::Size((RDpoint.x - (int)revisionPoint.x), (RDpoint.y - (int)revisionPoint.y));
+			tmpPoint = RerotatePoint(point, rotateAngle);
+			scale = cv::Size(RDpoint.x - RevisionPoint(tmpPoint, IDC_BACK_PIVOT).x, RDpoint.y - RevisionPoint(tmpPoint, IDC_BACK_PIVOT).y);
 			break;
 		case 2:
-			scale = cv::Size((int)revisionPoint.x - LDpoint.x, LDpoint.y - (int)revisionPoint.y);
+			tmpPoint = RerotatePoint(point, rotateAngle);
+			scale = cv::Size(RevisionPoint(tmpPoint, IDC_BACK_PIVOT).x - LDpoint.x, LDpoint.y - RevisionPoint(tmpPoint, IDC_BACK_PIVOT).y);
 			break;
 		case 3:
-			scale = cv::Size(RUpoint.x - (int)revisionPoint.x, (int)revisionPoint.y - RUpoint.y);
+			tmpPoint = RerotatePoint(point, rotateAngle);
+			scale = cv::Size(RUpoint.x - RevisionPoint(tmpPoint, IDC_BACK_PIVOT).x, RevisionPoint(tmpPoint, IDC_BACK_PIVOT).y - RUpoint.y);
 			break;
 		case 4:
-			scale = cv::Size((int)revisionPoint.x - LUpoint.x, (int)revisionPoint.y - LUpoint.y);
+			tmpPoint = RerotatePoint(point, rotateAngle);
+			scale = cv::Size(RevisionPoint(tmpPoint, IDC_BACK_PIVOT).x - LUpoint.x, RevisionPoint(tmpPoint, IDC_BACK_PIVOT).y - LUpoint.y);
 			break;
 		default:
 			break;
 		}
 
-		resize(GrabCutImg, saveImg, scale, 0, 0, CV_INTER_NN);
-		resize(originGrab, saveOrigin, scale, 0, 0, CV_INTER_NN);
+		cv::resize(GrabCutImg, saveImg, scale, 0, 0, CV_INTER_NN);
+		cv::resize(originGrab, saveOrigin, scale, 0, 0, CV_INTER_NN);
+
+		cv::warpAffine(saveImg, saveImg, getRotationMatrix2D(Point2d(saveImg.cols / 2, saveImg.rows / 2), rotateAngle, 1), saveImg.size(), 2);
+		cv::warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(Point2d(saveImg.cols / 2, saveImg.rows / 2), rotateAngle, 1), saveImg.size(), 2);
 
 		if (saveImg.cols % 8 != 0)
 			cv::resize(saveImg, saveImg, cv::Size(saveImg.cols - saveImg.cols % 8, saveImg.rows), 0, 0, CV_INTER_NN);
 		if (saveOrigin.cols % 8 != 0)
 			cv::resize(saveOrigin, saveOrigin, cv::Size(saveOrigin.cols - saveOrigin.cols % 8, saveOrigin.rows), 0, 0, CV_INTER_NN);
-		
+
 		DisplayPasteGrabcut(IDC_Back, saveImg, 2);
 	}
 
 	//회전
 	if (isRotationClick)
 	{
-		resize(GrabCutImg, saveImg, scale, 0, 0, CV_INTER_NN);
-		resize(originGrab, saveOrigin, scale, 0, 0, CV_INTER_NN);
+		cv::resize(GrabCutImg, saveImg, scale, 0, 0, CV_INTER_NN);
+		cv::resize(originGrab, saveOrigin, scale, 0, 0, CV_INTER_NN);
 		rotatePivot = Point2d(saveImg.cols / 2, saveImg.rows / 2);
+		mouseAngle = atan2(revisionPoint.y - imgCenterPoint.y, revisionPoint.x - imgCenterPoint.x) * 180 / 3.141592;
 
 		switch (clickPointIdx)
 		{
-		case 1:
-			if (abs(LUpoint.x - revisionPoint.x) > abs(LUpoint.y - revisionPoint.y))
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, ((LUpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, ((LUpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-			}
-			else
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, -((LUpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, -((LUpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-			}
-			break;
-		case 2:
-			if (abs(RUpoint.x - revisionPoint.x) > abs(RUpoint.y - revisionPoint.y))
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, ((RUpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, ((RUpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-			}
-			else
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, ((RUpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, ((RUpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-			}
-			break;
-		case 3:
-			if (abs(LDpoint.x - revisionPoint.x) > abs(LDpoint.y - revisionPoint.y))
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, -((LDpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, -((LDpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-			}
-			else
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, -((LDpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, -((LDpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-			}
-			break;
-		case 4:
-			if (abs(RDpoint.x - revisionPoint.x) > abs(RDpoint.y - revisionPoint.y))
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, -((RDpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, -((RDpoint.x - revisionPoint.x) / (float)saveImg.cols) * 90, 1), saveImg.size(), 2);
-			}
-			else
-			{
-				warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, ((RDpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-				warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, ((RDpoint.y - revisionPoint.y) / (float)saveImg.rows) * 90, 1), saveImg.size(), 2);
-			}
-			break;
-		default:
-			break;
+			case 1:
+				pivotAngle = atan2(luY - imgCenterPoint.y, luX - imgCenterPoint.x) * 180 / 3.141592;
+				rotateAngle = oldRotateAngle + (pivotAngle - mouseAngle);
+
+				cv::warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				cv::warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				break;
+			case 2:
+				pivotAngle = atan2(ruY - imgCenterPoint.y, ruX - imgCenterPoint.x) * 180 / 3.141592;
+				rotateAngle = oldRotateAngle + (pivotAngle - mouseAngle);
+
+				cv::warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				cv::warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				break;
+			case 3:
+				pivotAngle = atan2(ldY - imgCenterPoint.y, ldX - imgCenterPoint.x) * 180 / 3.141592;
+				rotateAngle = oldRotateAngle + (pivotAngle - mouseAngle);
+
+				cv::warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				cv::warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				break;
+			case 4:
+				pivotAngle = atan2(rdY - imgCenterPoint.y, rdX - imgCenterPoint.x) * 180 / 3.141592;
+				rotateAngle = oldRotateAngle + (pivotAngle - mouseAngle);
+
+				cv::warpAffine(saveImg, saveImg, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				cv::warpAffine(saveOrigin, saveOrigin, getRotationMatrix2D(rotatePivot, rotateAngle, 1), saveImg.size(), 2);
+				break;
+			default:
+				break;
 		}
 
 		if (saveImg.cols % 8 != 0)
@@ -1232,7 +1251,7 @@ void CDlgTab2::OnRButtonDown(UINT nFlags, CPoint point)
 
 	CPoint revisionPoint = RevisionPoint(point, IDC_BACK_PIVOT);
 
-	if (revisionPoint.x > LUpoint.x && revisionPoint.x < LUpoint.x + 10 && revisionPoint.y > LUpoint.y && revisionPoint.y < LUpoint.y + 10)
+	if (revisionPoint.x > luX - 5 && revisionPoint.x < luX + 5 && revisionPoint.y > luY - 5 && revisionPoint.y < luY + 5)
 	{
 		if (!GrabCutImg.data)
 			return;
@@ -1240,7 +1259,7 @@ void CDlgTab2::OnRButtonDown(UINT nFlags, CPoint point)
 		isRotationClick = true;
 		clickPointIdx = 1;
 	}
-	if (revisionPoint.x > RUpoint.x - 10 && revisionPoint.x < RUpoint.x && revisionPoint.y > RUpoint.y && revisionPoint.y < RUpoint.y + 10)
+	else if (revisionPoint.x > ruX - 5 && revisionPoint.x < ruX + 5 && revisionPoint.y > ruY - 5 && revisionPoint.y < ruY + 5)
 	{
 		if (!GrabCutImg.data)
 			return;
@@ -1248,7 +1267,7 @@ void CDlgTab2::OnRButtonDown(UINT nFlags, CPoint point)
 		isRotationClick = true;
 		clickPointIdx = 2;
 	}
-	if (revisionPoint.x > LDpoint.x && revisionPoint.x < LDpoint.x + 10 && revisionPoint.y > LDpoint.y - 10 && revisionPoint.y < LDpoint.y)
+	else if (revisionPoint.x > ldX - 5 && revisionPoint.x < ldX + 5 && revisionPoint.y > ldY - 5 && revisionPoint.y < ldY + 5)
 	{
 		if (!GrabCutImg.data)
 			return;
@@ -1256,7 +1275,7 @@ void CDlgTab2::OnRButtonDown(UINT nFlags, CPoint point)
 		isRotationClick = true;
 		clickPointIdx = 3;
 	}
-	if (revisionPoint.x > RDpoint.x - 10 && revisionPoint.x < RDpoint.x && revisionPoint.y > RDpoint.y - 10 && revisionPoint.y < RDpoint.y)
+	else if (revisionPoint.x > rdX - 5 && revisionPoint.x < rdX + 5 && revisionPoint.y > rdY - 5 && revisionPoint.y < rdY + 5)
 	{
 		if (!GrabCutImg.data)
 			return;
@@ -1273,6 +1292,7 @@ void CDlgTab2::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	isRotationClick = false;
 	isRbtnClick = false;
+	oldRotateAngle = rotateAngle;
 
 	//심카빙 삭제
 	if (isSeamDel) {
@@ -1494,6 +1514,7 @@ void CDlgTab2::OnBnClickedSavebutton()
 	{
 		for (int j = 0;j < saveImg.rows;j++)
 		{
+			if (saveImg.at<Vec3b>(j, i) == cv::Vec3b(240, 240, 240))	continue;
 			BGimg.at<Vec3b>(j + LUpoint.y, i + LUpoint.x)[0] = saveImg.at<Vec3b>(j, i)[0];
 			BGimg.at<Vec3b>(j + LUpoint.y, i + LUpoint.x)[1] = saveImg.at<Vec3b>(j, i)[1];
 			BGimg.at<Vec3b>(j + LUpoint.y, i + LUpoint.x)[2] = saveImg.at<Vec3b>(j, i)[2];
@@ -1509,4 +1530,16 @@ void CDlgTab2::OnBnClickedSavebutton()
 
 		cv::imwrite(string(cstrImgPathString)+".jpg", BGimg);
 	}
+}
+
+CPoint CDlgTab2::RerotatePoint(CPoint point, float angle)
+{
+	float distance = sqrt(pow(point.x - imgCenterPoint.x, 2) + pow(point.y - imgCenterPoint.y, 2));
+	CPoint tmpPoint = point - imgCenterPoint;
+
+	CPoint rerotatePoint;
+	rerotatePoint.x = tmpPoint.x * cos(angle * 3.141592 / 180) - tmpPoint.y * sin(angle * 3.141592 / 180) + imgCenterPoint.x - IDC_BACK_PIVOT.x;
+	rerotatePoint.y = tmpPoint.y * cos(angle * 3.141592 / 180) + tmpPoint.x * sin(angle * 3.141592 / 180) + imgCenterPoint.y - IDC_BACK_PIVOT.y;
+
+	return rerotatePoint;
 }

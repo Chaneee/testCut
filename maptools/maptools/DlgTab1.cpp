@@ -242,11 +242,11 @@ void CDlgTab1::OnBnClickedButton1()
 		inputImg = imread(string(cstrImgPathString), CV_LOAD_IMAGE_UNCHANGED);
 		
 		//크기조절
-		if(inputImg.rows > 514)
-			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols * 514 / inputImg.rows, 514), 0, 0, CV_INTER_NN);
+		if(inputImg.rows > 388)
+			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols * 388 / inputImg.rows, 388), 0, 0, CV_INTER_NN);
 
-		if (inputImg.cols > 470)
-			cv::resize(inputImg, inputImg, cv::Size(470, inputImg.rows * 470 / inputImg.cols), 0, 0, CV_INTER_NN);
+		if (inputImg.cols > 360)
+			cv::resize(inputImg, inputImg, cv::Size(360, inputImg.rows * 360 / inputImg.cols), 0, 0, CV_INTER_NN);
 
 		if (inputImg.cols % 8 != 0)
 			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols % 8, inputImg.rows), 0, 0, CV_INTER_NN);

@@ -33,6 +33,7 @@ public:
 	int seamcarving(int startPointX, int mode, int cutCount);
 	void seamEnergyDown(int mode);
 	CPoint RevisionPoint(CPoint point, CPoint pivot);
+	CPoint RerotatePoint(CPoint point, float angle);
 
 	afx_msg void OnLvnItemchangedList1(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnNMCustomdrawSlider1(NMHDR *pNMHDR, LRESULT *pResult);
