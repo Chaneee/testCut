@@ -345,7 +345,7 @@ BEGIN
 
     IDD_DIALOG1, DIALOG
     BEGIN
-        MOCKUP, 0, 100, 0, 0, "..\..\images\input.jpg"
+        MOCKUP, 0, 100, 0, 0, "..\..\2.배경이미지\ww.jpg"
         RIGHTMARGIN, 403
         BOTTOMMARGIN, 308
     END

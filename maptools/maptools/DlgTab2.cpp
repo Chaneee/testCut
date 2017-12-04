@@ -964,7 +964,7 @@ void CDlgTab2::OnMouseMove(UINT nFlags, CPoint point)
 	if (yMax < luY) yMax = luY; if (yMax < ruY) yMax = ruY; if (yMax < ldY) yMax = ldY;	if (yMax < rdY) yMax = rdY;
 
 	//마우스오버
-	if (revisionPoint.x < xMax && revisionPoint.x > xMin && revisionPoint.y < yMax && revisionPoint.y > yMin)
+	if (revisionPoint.x < BGimg.cols&& revisionPoint.x > 0 && revisionPoint.y < BGimg.rows && revisionPoint.y > 0)
 	{
 		DisplayPasteGrabcut(IDC_Back, saveImg, 4);
 	}
