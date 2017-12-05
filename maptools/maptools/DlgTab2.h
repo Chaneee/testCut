@@ -23,7 +23,7 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	void DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat);
+	void DisplayOutput(int IDC_PICTURE_TARGET, Mat targetMat, int mode);
 	void DisplayPasteGrabcut(int IDC_PICTURE_TARGET, Mat targetMatm, int mode);
 	void Compose(Mat BGMat, Mat originMat, int target_X, int target_Y, int mode);
 	cv::Vec3d RGBtoYCbCr(cv::Vec3d bgr);
@@ -48,10 +48,7 @@ public:
 	CStatic testpic;
 	
 //	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	CSliderCtrl widthSlide;
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	CSliderCtrl heightSlide;
-	CSliderCtrl allSlide;
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnBnClickedSeamdelete();

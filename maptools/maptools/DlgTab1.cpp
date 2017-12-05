@@ -196,7 +196,7 @@ void CDlgTab1::DisplayImage(int IDC_PICTURE_TARGET, Mat targetMat)
 	outPutImg = targetMat;
 	Mat cutGrab;
 	cutGrab = targetMat(firstRect);
-	cv::imwrite("output.png", cutGrab);
+	cv::imwrite("output.png", cutGrab);//////////////////////////////////////////////////////////////////////////////////////////
 	//cv::imwrite("output.png", targetMat);
 	delete targetIplImage;
 }
@@ -242,18 +242,17 @@ void CDlgTab1::OnBnClickedButton1()
 		inputImg = imread(string(cstrImgPathString), CV_LOAD_IMAGE_UNCHANGED);
 		
 		//크기조절
-		if(inputImg.rows > 388)
-			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols * 388 / inputImg.rows, 388), 0, 0, CV_INTER_NN);
+		if(inputImg.rows > 390)
+			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols * 390 / inputImg.rows, 390), 0, 0, CV_INTER_CUBIC);
 
-		if (inputImg.cols > 360)
-			cv::resize(inputImg, inputImg, cv::Size(360, inputImg.rows * 360 / inputImg.cols), 0, 0, CV_INTER_NN);
+		if (inputImg.cols > 458)
+			cv::resize(inputImg, inputImg, cv::Size(458, inputImg.rows * 458 / inputImg.cols), 0, 0, CV_INTER_CUBIC);
 
 		if (inputImg.cols % 8 != 0)
-			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols % 8, inputImg.rows), 0, 0, CV_INTER_NN);
+			cv::resize(inputImg, inputImg, cv::Size(inputImg.cols - inputImg.cols % 8, inputImg.rows), 0, 0, CV_INTER_CUBIC);
 
 		imgStore.push_back(inputImg);
 		inputImg.copyTo(originInput);
-		
 		
 		DisplayImage(IDC_PIC, inputImg);
 		isReadyInput = true;
@@ -437,6 +436,10 @@ void CDlgTab1::OnPaint()
 	CPaintDC dc(this); // device context for painting
 					   // TODO: 여기에 메시지 처리기 코드를 추가합니다.
 					   // 그리기 메시지에 대해서는 CDialog::OnPaint()을(를) 호출하지 마십시오.
+	Mat howTo = imread("howto.JPG", CV_LOAD_IMAGE_UNCHANGED);
+	if (howTo.cols % 8 != 0)
+		cv::resize(howTo, howTo, cv::Size(howTo.cols - howTo.cols % 8, howTo.rows), 0, 0, CV_INTER_NN);
+	DisplayHowTo(IDC_HOWTO, howTo);
 
 	//그랩컷 끝나기 전엔 버튼 비활성화
 	if (!isGrabCutFinsh)
@@ -465,4 +468,52 @@ BOOL CDlgTab1::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 	return TRUE;
 
 	return CDialog::OnSetCursor(pWnd, nHitTest, message);
+}
+
+//실행방법 띄울거
+void CDlgTab1::DisplayHowTo(int IDC_PICTURE_TARGET, Mat targetMat)
+{
+	IplImage* targetIplImage = new IplImage(targetMat);
+	if (targetIplImage != nullptr) {
+		CWnd* pWnd_ImageTraget = GetDlgItem(IDC_PICTURE_TARGET);
+		CClientDC dcImageTraget(pWnd_ImageTraget);
+		RECT rcImageTraget;
+		pWnd_ImageTraget->GetClientRect(&rcImageTraget);
+		rcImageTraget.top = 0;
+		rcImageTraget.left = 0;
+		rcImageTraget.bottom = targetMat.rows;
+		rcImageTraget.right = targetMat.cols;
+
+		BITMAPINFO bitmapInfo;
+		memset(&bitmapInfo, 0, sizeof(bitmapInfo));
+		bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bitmapInfo.bmiHeader.biPlanes = 1;
+		bitmapInfo.bmiHeader.biCompression = BI_RGB;
+		bitmapInfo.bmiHeader.biWidth = targetIplImage->width;
+		bitmapInfo.bmiHeader.biHeight = -targetIplImage->height;
+
+		IplImage *tempImage = nullptr;
+
+		if (targetIplImage->nChannels == 1)
+		{
+			tempImage = cvCreateImage(cvSize(targetIplImage->width, targetIplImage->height), IPL_DEPTH_8U, 3);
+			cvCvtColor(targetIplImage, tempImage, CV_GRAY2BGR);
+		}
+		else if (targetIplImage->nChannels == 3)
+		{
+			tempImage = cvCloneImage(targetIplImage);
+		}
+
+		bitmapInfo.bmiHeader.biBitCount = tempImage->depth * tempImage->nChannels;
+
+		dcImageTraget.SetStretchBltMode(COLORONCOLOR);
+		::StretchDIBits(dcImageTraget.GetSafeHdc(), rcImageTraget.left, rcImageTraget.top, rcImageTraget.right, rcImageTraget.bottom,
+			0, 0, tempImage->width, tempImage->height, tempImage->imageData, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+
+		/////////////////////
+		//dcImageTraget.StretchBlt(100, 100, inputImg.cols-100, inputImg.rows-100, &dcImageTraget, 0, 0, inputImg.cols+100, inputImg.rows+100,SRCCOPY);
+		cvReleaseImage(&tempImage);
+	}
+
+	delete targetIplImage;
 }

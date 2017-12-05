@@ -15,6 +15,7 @@ public:
 	CDlgTab1(CWnd* pParent = NULL);   // 표준 생성자입니다.
 	virtual ~CDlgTab1();
 	void DisplayImage(int IDC_PICTURE_TARGET, Mat targetMat);
+	void DisplayHowTo(int IDC_PICTURE_TARGET, Mat targetMat);
 	//마우스 현재 위치, 이전위치
 	CPoint nowMousePos, oldMousePoint;
 	Mat doGrabcut(Mat targetMat, int mode);
